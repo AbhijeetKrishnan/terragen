@@ -52,6 +52,13 @@ class Perlin {
         return a0 + w * (a1 - a0);
     }
 
+    static fade(t) {
+        // Fade function as defined by Ken Perlin.  This eases coordinate values
+        // so that they will "ease" towards integral values.  This ends up smoothing
+        // the final output.
+        return t * t * t * (t * (t * 6 - 15) + 10); // 6t^5 - 15t^4 + 10t^3
+    }
+
     // Computes the dot product of the distance and gradient vectors.
     dotGridGradient(ix, iy, x, y) {
 
@@ -76,8 +83,16 @@ class Perlin {
 
         // Determine interpolation weights
         // Could also use higher order polynomial/s-curve here
-        var sx = x - x0;
-        var sy = y - y0;
+        var sx = Perlin.fade(x - x0);
+        console.assert(sx >= 0.0 && sx <= 1.0, {
+            "message": "sx is not in [0, 1]",
+            "sx": sx
+        });
+        var sy = Perlin.fade(y - y0);
+        console.assert(sy >= 0.0 && sy <= 1.0, {
+            "message": "sy is not in [0, 1]",
+            "sy": sy
+        });
 
         // Interpolate between grid point gradients
         var n0, n1, ix0, ix1, value;
