@@ -1,12 +1,15 @@
 function main() {
     var canvas = document.getElementById('display');
     var ctx = canvas.getContext('2d');
-    perlin = new Perlin(512, 512);
-    for (var x = 0; x < 512; x++) {
-        for (var y = 0; y < 512; y++) {
-            var noise = perlin.getNoise(x, y);
+    var w = canvas.width;
+    var h = canvas.height;
+    perlin = new Perlin(w, h);
+    for (var i = 0; i < h; i++) {
+        for (var j = 0; j < w; j++) {
+            var noise = 255 * perlin.perlin2(j + 0.5, i + 0.5);
+            //console.log(noise);
             ctx.fillStyle = "rgb(" + noise + "," + noise + "," + noise + ")";
-            ctx.fillRect(x, y, 1, 1);
+            ctx.fillRect(j, i, 1, 1);
         }
     }
 }
