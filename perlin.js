@@ -82,15 +82,26 @@ class Perlin {
     // Ref.: https://en.wikipedia.org/wiki/Perlin_noise#Implementation
     perlin2(x, y, width, height) {
 
+        // console.log(x + " " + y + " " + width + " " + height);
+
         // Transform to Perlin grid coordinates
         x *= (this.IXMAX - 1) / width;
-        y *= (this.IYMAX - 1) / height; 
+        y *= (this.IYMAX - 1) / height;
 
         // Determine grid cell coordinates
         var x0 = Math.floor(x);
+        if (x0 + 1 == this.IXMAX)
+            x0 -= 1;
         var x1 = x0 + 1;
         var y0 = Math.floor(y);
+        if (y0 + 1 == this.IYMAX)
+            y0 -= 1;
         var y1 = y0 + 1;
+
+        console.assert(x0 < this.IXMAX);
+        console.assert(x1 < this.IXMAX);
+        console.assert(y0 < this.IYMAX);
+        console.assert(y1 < this.IYMAX);
 
         // Determine interpolation weights
         var sx = Perlin.fade(x - x0);
@@ -117,7 +128,7 @@ class Perlin {
         //console.log(ix0 + " " + ix1);
         value = Perlin.lerp(ix0, ix1, sy);
 
-        console.assert(value >= -1.0 && value <= 1.0, "Value in incorrect range");
+        console.assert(value >= -1.0 && value <= 1.0, "Value in incorrect range " + value);
         return value;
     }
 }

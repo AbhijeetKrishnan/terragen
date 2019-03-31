@@ -10,7 +10,7 @@ var defaultUp = vec3.fromValues(0,1,0); // default view up vector
 var lightAmbient = vec3.fromValues(1,1,1); // default light ambient emission
 var lightDiffuse = vec3.fromValues(1,1,1); // default light diffuse emission
 var lightSpecular = vec3.fromValues(1,1,1); // default light specular emission
-var lightPosition = vec3.fromValues(2,4,-0.5); // default light position
+var lightPosition = vec3.fromValues(32,32,-1); // default light position
 var rotateTheta = Math.PI/50; // how much to rotate models by with each key press
 
 /* input model data */
@@ -43,36 +43,9 @@ var textureULoc; // where to put texture for fragment shader
 var Eye = vec3.clone(defaultEye); // eye position in world space
 var Center = vec3.clone(defaultCenter); // view direction in world space
 var Up = vec3.clone(defaultUp); // view up vector in world space
-var viewDelta = 0; // how much to displace view with each key press
+var viewDelta = 0.05; // how much to displace view with each key press
 
 // ASSIGNMENT HELPER FUNCTIONS
-
-// get the JSON file from the passed URL
-function getJSONFile(url,descr) {
-    try {
-        if ((typeof(url) !== "string") || (typeof(descr) !== "string"))
-            throw "getJSONFile: parameter not a string";
-        else {
-            var httpReq = new XMLHttpRequest(); // a new http request
-            httpReq.open("GET",url,false); // init the request
-            httpReq.send(null); // send the request
-            var startTime = Date.now();
-            while ((httpReq.status !== 200) && (httpReq.readyState !== XMLHttpRequest.DONE)) {
-                if ((Date.now()-startTime) > 3000)
-                    break;
-            } // until its loaded or we time out after three seconds
-            if ((httpReq.status !== 200) || (httpReq.readyState !== XMLHttpRequest.DONE))
-                throw "Unable to open "+descr+" file!";
-            else
-                return JSON.parse(httpReq.response); 
-        } // end if good params
-    } // end try    
-    
-    catch(e) {
-        console.log(e);
-        return(String.null);
-    }
-} // end get input spheres
 
 // does stuff when keys are pressed
 function handleKeyDown(event) {
@@ -98,7 +71,7 @@ function handleKeyDown(event) {
         case "KeyS": // translate view backward, rotate up with shift
             if (event.getModifierState("Shift")) {
                 Center = vec3.add(Center,Center,vec3.scale(temp,Up,viewDelta));
-                Up = vec.cross(Up,viewRight,vec3.subtract(lookAt,Center,Eye)); /* global side effect */
+                Up = vec3.cross(Up,viewRight,vec3.subtract(lookAt,Center,Eye)); /* global side effect */
             } else {
                 Eye = vec3.add(Eye,Eye,vec3.scale(temp,lookAt,-viewDelta));
                 Center = vec3.add(Center,Center,vec3.scale(temp,lookAt,-viewDelta));
@@ -107,7 +80,7 @@ function handleKeyDown(event) {
         case "KeyW": // translate view forward, rotate down with shift
             if (event.getModifierState("Shift")) {
                 Center = vec3.add(Center,Center,vec3.scale(temp,Up,-viewDelta));
-                Up = vec.cross(Up,viewRight,vec3.subtract(lookAt,Center,Eye)); /* global side effect */
+                Up = vec3.cross(Up,viewRight,vec3.subtract(lookAt,Center,Eye)); /* global side effect */
             } else {
                 Eye = vec3.add(Eye,Eye,vec3.scale(temp,lookAt,viewDelta));
                 Center = vec3.add(Center,Center,vec3.scale(temp,lookAt,viewDelta));
@@ -166,15 +139,16 @@ function setupWebGL() {
 // read models in, load them into webgl buffers
 function loadModels() {
     
-    // load a texture for the current set or sphere
-    function loadTexture(whichModel,currModel,textureFile) {
+    // load a texture for the current set
+    function loadTexture(whichModel,textureFile) {
         
         // load a 1x1 gray image into texture for use when no texture, and until texture loads
         textures[whichModel] = gl.createTexture(); // new texture struct for model
         var currTexture = textures[whichModel]; // shorthand
         gl.bindTexture(gl.TEXTURE_2D, currTexture); // activate model's texture
         gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); // invert vertical texcoord v, load gray 1x1
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,new Uint8Array([64, 64, 64, 255]));        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); // invert vertical texcoord v
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,new Uint8Array([64, 64, 64, 255]));        
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); // invert vertical texcoord v
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR); // use linear filter for magnification
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR); // use mipmap for minification
         gl.generateMipmap(gl.TEXTURE_2D); // construct mipmap pyramid
@@ -196,9 +170,79 @@ function loadModels() {
             currTexture.image.src = INPUT_URL + textureFile; // set image location
         } // end if material has a texture
     } // end load texture
+
+    function transformHeight(height, newMin, newMax) {
+        return (height + 1) * (newMax - newMin) / 2 + newMin;
+    }
+
+    function generateTerrain(w, h) {
+        var terrainTris = [];
+
+        var triMat = {
+            ambient: [0.1, 0.1, 0.1],
+            diffuse: [0.0, 0.6, 0.0],
+            specular: [0.3, 0.3, 0.3],
+            n: 15,
+            alpha: 0.5,
+            texture: false
+        };
+        const triObj = {
+            material: triMat,
+            vertices: [],
+            normals: [],
+            uvs: [[0, 0], [0.5, 1], [1, 0]],
+            triangles: [[0, 1, 2]]
+        };
+
+        perlin = new Perlin(16, 16);
+        
+        for (var i = 0; i < h; i++) {
+            for (var j = 0; j < w; j++) {
+                // generating top-left triangle
+                var v1 = vec3.fromValues(j, i, transformHeight(perlin.perlin2(j, i, w, h), 0, 1));
+                var v2 = vec3.fromValues(j, i + 1, transformHeight(perlin.perlin2(j, i + 1, w, h), 0, 1));
+                var v3 = vec3.fromValues(j + 1, i, transformHeight(perlin.perlin2(j + 1, i, w, h), 0, 1));
+                var v3_v1 = vec3.create();
+                vec3.subtract(v3_v1, v3, v1);
+                var v2_v1 = vec3.create();
+                vec3.subtract(v2_v1, v2, v1);
+                var n = vec3.create();
+                vec3.cross(n, v3_v1, v2_v1);
+                vec3.normalize(n, n);
+                
+                var tlTri = Object.assign({}, triObj);
+                tlTri.vertices = [[v1[0], v1[1], v1[2]], [v2[0], v2[1], v2[2]], [v3[0], v3[1], v3[2]]];
+                tlTri.normals = [n, n, n];
+
+                // generating bottom-right triangle
+                v1 = vec3.fromValues(j + 1, i + 1, transformHeight(perlin.perlin2(j + 1, i + 1, w, h), 0, 1));
+                v2 = vec3.fromValues(j, i + 1, transformHeight(perlin.perlin2(j, i + 1, w, h), 0, 1));
+                v3 = vec3.fromValues(j + 1, i, transformHeight(perlin.perlin2(j + 1, i, w, h), 0, 1));
+                var v3_v1 = vec3.create();
+                vec3.subtract(v3_v1, v3, v1);
+                var v2_v1 = vec3.create();
+                vec3.subtract(v2_v1, v2, v1);
+                var n = vec3.create();
+                vec3.cross(n, v2_v1, v3_v1);
+                vec3.normalize(n, n);
+                
+                var brTri = Object.assign({}, triObj);
+                brTri.vertices = [[v1[0], v1[1], v1[2]], [v2[0], v2[1], v2[2]], [v3[0], v3[1], v3[2]]];
+                brTri.normals = [-n, -n, -n];
+
+                terrainTris.push(tlTri);
+                terrainTris.push(brTri);
+                // console.log(tlTri);
+                // console.log(brTri);
+            }
+        }
+
+        return terrainTris;
+    }
     
     
-    inputTriangles = getJSONFile(INPUT_TRIANGLES_URL,"triangles"); // read in the triangle data
+    inputTriangles = generateTerrain(64, 64); // read in the triangle data
+    // console.log(inputTriangles);
 
     try {
         if (inputTriangles == String.null)
@@ -254,7 +298,7 @@ function loadModels() {
                 uvBuffers[whichSet] = gl.createBuffer(); // init empty webgl set uv coord buffer
                 gl.bindBuffer(gl.ARRAY_BUFFER,uvBuffers[whichSet]); // activate that buffer
                 gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(currSet.glUvs),gl.STATIC_DRAW); // data in
-                loadTexture(whichSet,currSet,currSet.material.texture); // load tri set's texture
+                loadTexture(whichSet,currSet.material.texture); // load tri set's texture
 
                 // set up the triangle index array, adjusting indices across sets
                 currSet.glTriangles = []; // flat index list for webgl
@@ -461,8 +505,6 @@ function renderModels() {
     var mMatrix = mat4.create(); // model matrix
     var hpvMatrix = mat4.create(); // hand * proj * view matrices
     var hpvmMatrix = mat4.create(); // hand * proj * view * model matrices
-    const HIGHLIGHTMATERIAL = 
-        {ambient:[0.5,0.5,0], diffuse:[0.5,0.5,0], specular:[0,0,0], n:1, alpha:1, texture:false}; // hlht mat
     
     window.requestAnimationFrame(renderModels); // set up frame render callback
     
@@ -486,11 +528,7 @@ function renderModels() {
         gl.uniformMatrix4fv(mMatrixULoc, false, mMatrix); // pass in the m matrix
         gl.uniformMatrix4fv(pvmMatrixULoc, false, hpvmMatrix); // pass in the hpvm matrix
         
-        // reflectivity: feed to the fragment shader
-        if (inputTriangles[whichTriSet].on)
-            setMaterial = HIGHLIGHTMATERIAL; // highlight material
-        else
-            setMaterial = currSet.material; // normal material
+        setMaterial = currSet.material; // normal material
         gl.uniform3fv(ambientULoc,setMaterial.ambient); // pass in the ambient reflectivity
         gl.uniform3fv(diffuseULoc,setMaterial.diffuse); // pass in the diffuse reflectivity
         gl.uniform3fv(specularULoc,setMaterial.specular); // pass in the specular reflectivity
