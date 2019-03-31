@@ -193,14 +193,14 @@ function loadModels() {
 
     /**
      * Transform value in range [oldMax, oldMin] to range [newMax, newMin]
-     * @param {Number} origVal 
-     * @param {Number} oldMax 
-     * @param {Number} oldMin 
+     * @param {Number} origVal  
      * @param {Number} newMin 
-     * @param {Number} newMax 
+     * @param {Number} newMax
+     * @param {Number} oldMin 
+     * @param {Number} oldMax
      * @return {Number} 
      */
-    function transformRange(origVal, oldMax, oldMin, newMin, newMax) {
+    function transformRange(origVal, newMin, newMax, oldMin=-1, oldMax=1) {
         return (origVal - oldMin) * (newMax - newMin) / (oldMax - oldMin) + newMin;
     }
 
@@ -238,9 +238,9 @@ function loadModels() {
         noise = new Perlin(PERLIN_WIDTH, PERLIN_HEIGHT);
 
         function generateTri(p1, p2, p3) {
-            var v1 = vec3.fromValues(p1[0], p1[1], transformHeight(noise.getNoise(vec2.clone(p1), w, h), TERRAIN_MIN_DEPTH, TERRAIN_MAX_ELEVATION));
-            var v2 = vec3.fromValues(p2[0], p2[1], transformHeight(noise.getNoise(vec2.clone(p2), w, h), TERRAIN_MIN_DEPTH, TERRAIN_MAX_ELEVATION));
-            var v3 = vec3.fromValues(p3[0], p3[1], transformHeight(noise.getNoise(vec2.clone(p3), w, h), TERRAIN_MIN_DEPTH, TERRAIN_MAX_ELEVATION));
+            var v1 = vec3.fromValues(p1[0], p1[1], transformRange(noise.getNoise(vec2.clone(p1), w, h), TERRAIN_MIN_DEPTH, TERRAIN_MAX_ELEVATION));
+            var v2 = vec3.fromValues(p2[0], p2[1], transformRange(noise.getNoise(vec2.clone(p2), w, h), TERRAIN_MIN_DEPTH, TERRAIN_MAX_ELEVATION));
+            var v3 = vec3.fromValues(p3[0], p3[1], transformRange(noise.getNoise(vec2.clone(p3), w, h), TERRAIN_MIN_DEPTH, TERRAIN_MAX_ELEVATION));
             var v3_v1 = vec3.create();
             vec3.subtract(v3_v1, v3, v1);
             var v2_v1 = vec3.create();
