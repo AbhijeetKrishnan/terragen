@@ -1,14 +1,14 @@
 /* GLOBAL CONSTANTS AND VARIABLES */
 
 /* assignment specific globals */
-var defaultEye = vec3.fromValues(32, 32, -20); // default eye position in world space
-var defaultCenter = vec3.fromValues(32, 32, 0.5); // default view direction in world space
-var defaultUp = vec3.fromValues(0, 1, 0); // default view up vector
+var defaultEye = vec3.fromValues(-1.810965657234192, 36.399932861328125, -10.831521987915039); // default eye position in world space
+var defaultCenter = vec3.fromValues(62.18913650512695, 36.399932861328125, 9.168441772460938); // default view direction in world space
+var defaultUp = vec3.fromValues(0.30000001192092896, 0, -1); // default view up vector
 var lightAmbient = vec3.fromValues(1, 1, 1); // default light ambient emission
 var lightDiffuse = vec3.fromValues(1, 1, 1); // default light diffuse emission
 var lightSpecular = vec3.fromValues(1, 1, 1); // default light specular emission
-var lightPosition = vec3.fromValues(0, 0, -1); // default light position
-var rotateTheta = Math.PI / 50; // how much to rotate models by with each key press
+var lightPosition = vec3.fromValues(0, 0, -20); // default light position
+var rotateTheta = Math.PI / 10; // how much to rotate models by with each key press
 
 /* input model data */
 var gl = null; // the all powerful gl object. It's all here folks!
@@ -40,7 +40,7 @@ var textureULoc; // where to put texture for fragment shader
 var Eye = vec3.clone(defaultEye); // eye position in world space
 var Center = vec3.clone(defaultCenter); // view direction in world space
 var Up = vec3.clone(defaultUp); // view up vector in world space
-var viewDelta = 0.05; // how much to displace view with each key press
+var viewDelta = 0.1; // how much to displace view with each key press
 
 var webGLCanvas;
 
@@ -48,7 +48,7 @@ var webGLCanvas;
 const TERRAIN_WIDTH = 64;
 const TERRAIN_HEIGHT = 64;
 const TERRAIN_MIN_DEPTH = 0;
-const TERRAIN_MAX_ELEVATION = 8;
+const TERRAIN_MAX_ELEVATION = Math.random() * 32;
 
 const PERLIN_WIDTH = 16;
 const PERLIN_HEIGHT = 16;
@@ -119,6 +119,11 @@ function handleKeyDown(event) {
             Eye = vec3.copy(Eye, defaultEye);
             Center = vec3.copy(Center, defaultCenter);
             Up = vec3.copy(Up, defaultUp);
+            break;
+        case "KeyI": // print view parameters
+            console.log(Eye);
+            console.log(Center);
+            console.log(Up);
             break;
 
     } // end switch
@@ -512,6 +517,13 @@ function setupShaders() {
 } // end setup shaders
 
 /**
+ * Setup view parameters
+ */
+function setupView() {
+
+}
+
+/**
  * render the loaded model
  */
 function renderModels() {
@@ -608,5 +620,6 @@ function main() {
     setupWebGL(); // set up the webGL environment
     loadModels(); // load in the models from tri file
     setupShaders(); // setup the webGL shaders
+    //setupView(); // setup camera
     renderModels(); // draw the triangles using webGL
 } // end main
