@@ -218,9 +218,11 @@ function loadModels() {
     function generateTerrain(w, h) {
         var terrainTris = [];
 
+        var colour = [Math.random(), Math.random(), Math.random()];
+
         const triMat = {
             ambient: [0.1, 0.1, 0.1],
-            diffuse: [0.0, 0.6, 0.0],
+            diffuse: colour,
             specular: [0.3, 0.3, 0.3],
             n: 15,
             alpha: 0.5,
