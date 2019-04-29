@@ -21,7 +21,7 @@ var vertexBuffers = []; // vertex coordinate lists by set, in triples
 var normalBuffers = []; // normal component lists by set, in triples
 var uvBuffers = []; // uv coord lists by set, in duples
 var triangleBuffers = []; // indices into vertexBuffers by set, in triples
-var textures = []; // texture imagery by set
+var textures = {}; // texture imagery by set
 
 /* shader parameter locations */
 var vPosAttribLoc; // where to put position for vertex shader
@@ -48,10 +48,12 @@ var webGLCanvas;
 const TERRAIN_WIDTH = 64;
 const TERRAIN_HEIGHT = 64;
 const TERRAIN_MIN_DEPTH = 0;
-const TERRAIN_MAX_ELEVATION = Math.random() * 32;
+const TERRAIN_MAX_ELEVATION = 32;
 
 const PERLIN_WIDTH = 16;
 const PERLIN_HEIGHT = 16;
+
+INPUT_URL = "https://raw.githubusercontent.com/MystikNinja/terragen/master/"
 
 // ASSIGNMENT HELPER FUNCTIONS
 
@@ -161,39 +163,75 @@ function setupWebGL() {
 function loadModels() {
 
     /**
-     * load a texture for the current set
-     * @param {Number} whichModel 
-     * @param {string} textureFile 
+     * generates a texture by interpolating between baseColour and highlightColour based on noise value
+     * @param {Number} texWidth width of texture
+     * @param {Number} texHeight height of texture
+     * @param {Number} perlinWidth width of Perlin grid size
+     * @param {Number} perlinHeight height of Perlin grid size
+     * @param {Array} baseColour
+     * @param {Array} hightlightColour
+     * @return {HTMLCanvasElement} 
      */
-    function loadTexture(whichModel, textureFile) {
+    function generateTexture(texWidth, texHeight, perlinWidth, perlinHeight, baseColour, highlightColour) {
+        var canvas = document.createElement('canvas'); // Ref: https://stackoverflow.com/questions/3892010/create-2d-context-without-canvas
+        canvas.width = texWidth;
+        canvas.height = texHeight;
+        var ctx = canvas.getContext('2d');
+        var w = canvas.width;
+        var h = canvas.height;
+        baseColour = vec3.fromValues(baseColour[0], baseColour[1], baseColour[2]);
+        highlightColour = vec3.fromValues(highlightColour[0], highlightColour[1], highlightColour[2]);
+        perlin = new Perlin(perlinWidth, perlinHeight); // could possible vary this as a ratio of world size
+        for (var i = 0; i < h; i++) {
+            for (var j = 0; j < w; j++) {
+                var noise = perlin.getNoise(vec2.fromValues(j + 0.5, i + 0.5), w, h) / 2 + 0.5; // experiment without 0.5
+                var rgb = vec3.create();
+                vec3.lerp(rgb, baseColour, highlightColour, noise);
+                ctx.fillStyle = "rgb(" + rgb[0] + "," + rgb[1] + "," + rgb[2] + ")";
+                ctx.fillRect(j, i, 1, 1);
+            }
+        }
+        //var image_data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        //var rgba_byte_array = image_data.data;
+        //console.log(rgba_byte_array);
+        //return rgba_byte_array;
+        return canvas;
+    }
 
-        // load a 1x1 gray image into texture for use when no texture, and until texture loads
-        textures[whichModel] = gl.createTexture(); // new texture struct for model
-        var currTexture = textures[whichModel]; // shorthand
-        gl.bindTexture(gl.TEXTURE_2D, currTexture); // activate model's texture
-        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); // invert vertical texcoord v, load gray 1x1
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([64, 64, 64, 255]));
-        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); // invert vertical texcoord v
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR); // use linear filter for magnification
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR); // use mipmap for minification
-        gl.generateMipmap(gl.TEXTURE_2D); // construct mipmap pyramid
-        gl.bindTexture(gl.TEXTURE_2D, null); // deactivate model's texture
-
-        // if there is a texture to load, asynchronously load it
-        if (textureFile != false) {
-            currTexture.image = new Image(); // new image struct for texture
-            currTexture.image.onload = function () { // when texture image loaded...
-                gl.bindTexture(gl.TEXTURE_2D, currTexture); // activate model's new texture
-                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, currTexture.image); // norm 2D texture
-                gl.generateMipmap(gl.TEXTURE_2D); // rebuild mipmap pyramid
-                gl.bindTexture(gl.TEXTURE_2D, null); // deactivate model's new texture
-            } // end when texture image loaded
-            currTexture.image.onerror = function () { // when texture image load fails...
-                console.log("Unable to load texture " + textureFile);
-            } // end when texture image load fails
-            currTexture.image.crossOrigin = "Anonymous"; // allow cross origin load, please
-            currTexture.image.src = INPUT_URL + textureFile; // set image location
-        } // end if material has a texture
+    /**
+     * load a texture
+     * @param {string} textureName 
+     */
+    function loadTexture(textureName) {
+        const TEX_WIDTH = 256;
+        const TEX_HEIGHT = 256;
+        const textureParams = {
+            grass: {
+                baseColour: [53, 94, 59],
+                highlightColour: [19, 136, 8]
+            },
+            rock: {
+                baseColour: [123, 63, 0],
+                highlightColour: [210, 105, 30]
+            },
+            snow: {
+                baseColour: [240, 234, 214],
+                highlightColour: [255, 250, 250]
+            }
+        }
+        if (!(textureName in textures)) {
+            textures[textureName] = gl.createTexture(); // new texture struct for model
+            var currTexture = textures[textureName]; // shorthand
+            gl.bindTexture(gl.TEXTURE_2D, currTexture); // activate model's texture
+            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); // invert vertical texcoord v, load gray 1x1
+            var tex = generateTexture(TEX_WIDTH, TEX_HEIGHT, PERLIN_WIDTH, PERLIN_HEIGHT, textureParams[textureName].baseColour, textureParams[textureName].highlightColour);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, tex);
+            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); // invert vertical texcoord v
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR); // use linear filter for magnification
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR); // use mipmap for minification
+            gl.generateMipmap(gl.TEXTURE_2D); // construct mipmap pyramid
+            gl.bindTexture(gl.TEXTURE_2D, null); // deactivate model's texture
+        }
     } // end load texture
 
     /**
@@ -222,11 +260,11 @@ function loadModels() {
 
         const triMat = {
             ambient: [0.1, 0.1, 0.1],
-            diffuse: colour,
+            diffuse: [0.8, 0.8, 0.8],
             specular: [0.3, 0.3, 0.3],
             n: 15,
             alpha: 0.5,
-            texture: false
+            texture: "download.png"
         };
         const triObj = {
             material: triMat,
@@ -256,7 +294,21 @@ function loadModels() {
             vec3.cross(n, v3_v1, v2_v1);
             vec3.normalize(n, n);
 
+            var currTriMat = Object.assign({}, triMat);
             var tri = Object.assign({}, triObj);
+            tri.material = currTriMat;
+            var ht = (v1[2] + v2[2] + v3[2]) / 3;
+            var lim1 = TERRAIN_MIN_DEPTH + 0.4 * (TERRAIN_MAX_ELEVATION - TERRAIN_MIN_DEPTH);
+            var lim2 = TERRAIN_MIN_DEPTH + 0.5 * (TERRAIN_MAX_ELEVATION - TERRAIN_MIN_DEPTH);
+            if (ht < lim1) {
+                tri.material.texture = "snow";
+            }
+            else if (ht < lim2) {
+                tri.material.texture = "rock";
+            }
+            else {
+                tri.material.texture = "grass";
+            }
             tri.vertices = [
                 [v1[0], v1[1], v1[2]],
                 [v2[0], v2[1], v2[2]],
@@ -269,7 +321,6 @@ function loadModels() {
             ];
             return tri;
         }
-
         for (var i = 0; i < h; i++) {
             for (var j = 0; j < w; j++) {
                 // generating four corner vectors
@@ -281,10 +332,12 @@ function loadModels() {
                 // generating top-left triangle
                 var tlTri = generateTri(tl, bl, tr);
                 terrainTris.push(tlTri);
+                //console.log("tlTri " + terrainTris[terrainTris.length-1].material.texture);
 
                 // generating bottom-right triangle
                 var brTri = generateTri(br, tr, bl);
                 terrainTris.push(brTri);
+                //console.log("brTri " + terrainTris[terrainTris.length-1].material.texture);
             }
         }
         return terrainTris;
@@ -342,7 +395,7 @@ function loadModels() {
         uvBuffers[whichSet] = gl.createBuffer(); // init empty webgl set uv coord buffer
         gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffers[whichSet]); // activate that buffer
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(currSet.glUvs), gl.STATIC_DRAW); // data in
-        loadTexture(whichSet, currSet.material.texture); // load tri set's texture
+        loadTexture(currSet.material.texture); // load tri set's texture
 
         // set up the triangle index array, adjusting indices across sets
         currSet.glTriangles = []; // flat index list for webgl
@@ -522,7 +575,7 @@ function setupShaders() {
  * Setup view parameters
  */
 function setupView() {
-
+    // TODO
 }
 
 /**
@@ -589,7 +642,7 @@ function renderModels() {
         gl.uniform1f(shininessULoc, setMaterial.n); // pass in the specular exponent
         gl.uniform1i(usingTextureULoc, (currSet.material.texture != false)); // whether the set uses texture
         gl.activeTexture(gl.TEXTURE0); // bind to active texture 0 (the first)
-        gl.bindTexture(gl.TEXTURE_2D, textures[whichTriSet]); // bind the set's texture
+        gl.bindTexture(gl.TEXTURE_2D, textures[currSet.material.texture]); // bind the set's texture
         gl.uniform1i(textureULoc, 0); // pass in the texture and active texture 0
 
         // position, normal and uv buffers: activate and feed into vertex shader
