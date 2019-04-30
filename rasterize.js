@@ -1,14 +1,14 @@
 /* GLOBAL CONSTANTS AND VARIABLES */
 
 /* assignment specific globals */
-var defaultEye = vec3.fromValues(-1.810965657234192, 36.399932861328125, 40.831521987915039); // default eye position in world space
-var defaultCenter = vec3.fromValues(62.18913650512695, 36.399932861328125, -9.168441772460938); // default view direction in world space
-var defaultUp = vec3.fromValues(0.30000001192092896, 0, 1); // default view up vector
+var defaultEye = vec3.fromValues(0, 0, 0); // default eye position in world space
+var defaultCenter = vec3.fromValues(0, 1, 0); // default view direction in world space
+var defaultUp = vec3.fromValues(0, 0, 1); // default view up vector
 
 var lightAmbient = vec3.fromValues(1, 1, 1); // default light ambient emission
 var lightDiffuse = vec3.fromValues(1, 1, 1); // default light diffuse emission
 var lightSpecular = vec3.fromValues(1, 1, 1); // default light specular emission
-var lightPosition = vec3.fromValues(-1.810965657234192, 36.399932861328125, 40.831521987915039); // default light position
+var lightPosition = vec3.fromValues(0, 0, 0); // default light position
 
 /* input model data */
 var gl = null; // the all powerful gl object. It's all here folks!
@@ -54,7 +54,10 @@ const TERRAIN_MAX_ELEVATION = 32;
 const PERLIN_WIDTH = 16;
 const PERLIN_HEIGHT = 16;
 
-const OBJ_STEP_SIZE = 0.3; // ought to be < 1
+const TEX_WIDTH = 256;
+const TEX_HEIGHT = 256;
+
+const OBJ_STEP_SIZE = 0.4; // ought to be < 1
 
 // ASSIGNMENT HELPER FUNCTIONS
 
@@ -122,11 +125,6 @@ function handleKeyDown(event) {
             Eye = vec3.copy(Eye, defaultEye);
             Center = vec3.copy(Center, defaultCenter);
             Up = vec3.copy(Up, defaultUp);
-            break;
-        case "KeyI": // print view parameters
-            console.log(Eye);
-            console.log(Center);
-            console.log(Up);
             break;
 
     } // end switch
@@ -213,8 +211,6 @@ function loadModels() {
      * @param {string} textureName 
      */
     function loadTexture(textureName) {
-        const TEX_WIDTH = 256;
-        const TEX_HEIGHT = 256;
         const textureParams = {
             grass: {
                 baseColour: [53, 94, 59],
@@ -645,11 +641,17 @@ function setupShaders() {
  * Setup view parameters
  */
 function setupView() {
-    Eye = vec3.fromValues(TERRAIN_WIDTH / 2, 0, 0); // eye position in world space
-    Center = vec3.clone(defaultCenter); // view direction in world space
-    Up = vec3.clone(defaultUp); // view up vector in world space
-    viewDelta = 0.1; // how much to displace view with each key press
-    var rotateTheta = Math.PI / 10; // how much to rotate models by with each key press
+    let eye_x = TERRAIN_WIDTH / 2;
+    let eye_y = 0;
+    let eye_z = 1.5 * TERRAIN_MAX_ELEVATION - 0.5 * TERRAIN_MIN_DEPTH;
+    Eye = vec3.fromValues(eye_x, eye_y, eye_z);
+    Center = vec3.fromValues(eye_x, TERRAIN_HEIGHT, 0);
+    vec3.sub(Up, Center, Eye);
+    vec3.cross(Up, Up, vec3.fromValues(-1, 0, 0)); // not sure why -1
+    viewDelta = (TERRAIN_MAX_ELEVATION - TERRAIN_MIN_DEPTH) / 100;
+    rotateTheta = Math.PI / 10;
+
+    lightPosition = vec3.fromValues(TERRAIN_WIDTH / 2, TERRAIN_HEIGHT / 2, TERRAIN_MAX_ELEVATION);
 }
 
 /**
@@ -714,7 +716,7 @@ function renderModels() {
  */
 function saveAsImage() {
     var image = webGLCanvas.toDataURL("image/png").replace("image/png", "image/octet-stream"); // here is the most important part because if you dont replace you will get a DOM 18 exception.
-    window.location.href = image; // it will save locally
+    window.location.href = image; // it will save to default download folder
 }
 
 
@@ -724,6 +726,6 @@ function main() {
     setupWebGL(); // set up the webGL environment
     loadModels(); // load in the models from tri file
     setupShaders(); // setup the webGL shaders
-    //setupView(); // setup camera
+    setupView(); // setup camera
     renderModels(); // draw the triangles using webGL
 } // end main
