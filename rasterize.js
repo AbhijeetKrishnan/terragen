@@ -1,14 +1,14 @@
 /* GLOBAL CONSTANTS AND VARIABLES */
 
 /* assignment specific globals */
-var defaultEye = vec3.fromValues(-1.810965657234192, 36.399932861328125, -10.831521987915039); // default eye position in world space
-var defaultCenter = vec3.fromValues(62.18913650512695, 36.399932861328125, 9.168441772460938); // default view direction in world space
-var defaultUp = vec3.fromValues(0.30000001192092896, 0, -1); // default view up vector
+var defaultEye = vec3.fromValues(-1.810965657234192, 36.399932861328125, 40.831521987915039); // default eye position in world space
+var defaultCenter = vec3.fromValues(62.18913650512695, 36.399932861328125, -9.168441772460938); // default view direction in world space
+var defaultUp = vec3.fromValues(0.30000001192092896, 0, 1); // default view up vector
+
 var lightAmbient = vec3.fromValues(1, 1, 1); // default light ambient emission
 var lightDiffuse = vec3.fromValues(1, 1, 1); // default light diffuse emission
 var lightSpecular = vec3.fromValues(1, 1, 1); // default light specular emission
-var lightPosition = vec3.fromValues(0, 0, -20); // default light position
-var rotateTheta = Math.PI / 10; // how much to rotate models by with each key press
+var lightPosition = vec3.fromValues(-1.810965657234192, 36.399932861328125, 40.831521987915039); // default light position
 
 /* input model data */
 var gl = null; // the all powerful gl object. It's all here folks!
@@ -41,6 +41,7 @@ var Eye = vec3.clone(defaultEye); // eye position in world space
 var Center = vec3.clone(defaultCenter); // view direction in world space
 var Up = vec3.clone(defaultUp); // view up vector in world space
 var viewDelta = 0.1; // how much to displace view with each key press
+var rotateTheta = Math.PI / 10; // how much to rotate models by with each key press
 
 var webGLCanvas;
 
@@ -52,6 +53,8 @@ const TERRAIN_MAX_ELEVATION = 32;
 
 const PERLIN_WIDTH = 16;
 const PERLIN_HEIGHT = 16;
+
+const OBJ_STEP_SIZE = 0.3; // ought to be < 1
 
 // ASSIGNMENT HELPER FUNCTIONS
 
@@ -281,7 +284,7 @@ function loadModels() {
             let v2_v1 = vec3.create();
             vec3.subtract(v2_v1, v2, v1);
             let n = vec3.create();
-            vec3.cross(n, v3_v1, v2_v1);
+            vec3.cross(n, v2_v1, v3_v1);
             vec3.normalize(n, n);
             return n;
         }
@@ -303,11 +306,11 @@ function loadModels() {
             let lim1 = TERRAIN_MIN_DEPTH + texture1_share * (TERRAIN_MAX_ELEVATION - TERRAIN_MIN_DEPTH);
             let lim2 = TERRAIN_MIN_DEPTH + texture2_share * (TERRAIN_MAX_ELEVATION - TERRAIN_MIN_DEPTH);
             if (ht < lim1) {
-                tri.material.texture = "snow";
+                tri.material.texture = "grass";
             } else if (ht < lim2) {
                 tri.material.texture = "rock";
             } else {
-                tri.material.texture = "grass";
+                tri.material.texture = "snow";
             }
             tri.vertices = [
                 [v1[0], v1[1], v1[2]],
@@ -323,11 +326,12 @@ function loadModels() {
         }
 
         function generateObject(x, y, z) {
+            /* define model */
             let v1 = vec3.fromValues(x - 0.1, y - 0.1, z);
             let v2 = vec3.fromValues(x - 0.1, y + 0.1, z);
             let v3 = vec3.fromValues(x + 0.1, y + 0.1, z);
             let v4 = vec3.fromValues(x + 0.1, y - 0.1, z);
-            let v5 = vec3.fromValues(x, y, z - 1);
+            let v5 = vec3.fromValues(x, y, z + 1);
 
             let n1 = getNormal(v1, v5, v2);
             let n2 = getNormal(v2, v5, v3);
@@ -348,9 +352,8 @@ function loadModels() {
                 [0, 4, 1],
                 [1, 4, 2],
                 [2, 4, 3],
-                [3, 4, 1]
+                [3, 4, 0]
             ];
-
             tri.vertices = [
                 [v1[0], v1[1], v1[2]],
                 [v2[0], v2[1], v2[2]],
@@ -363,7 +366,7 @@ function loadModels() {
                 [n2[0], n2[1], n2[2]],
                 [n3[0], n3[1], n3[2]],
                 [n4[0], n4[1], n4[2]],
-                [0, 0, -1]
+                [0, 0, 1] // no idea why lol
             ];
             return tri;
         }
@@ -385,12 +388,25 @@ function loadModels() {
                 terrainTris.push(brTri);
 
                 // generating objects
-                objProbability = transformRange(objNoise.getNoise(vec2.fromValues(j, i), w, h), 0, 1);
-                draw = Math.random();
-                if (draw < objProbability) {
-                    // place object at (k, l, h);
-                    ht = tlTri.vertices[0][2];
-                    terrainTris.push(generateObject(j, i, ht));
+                for (let k = i; k < i + 1; k += OBJ_STEP_SIZE) {
+                    for (let l = j; l < j + 1; l += OBJ_STEP_SIZE) {
+                        objProbability = transformRange(objNoise.getNoise(vec2.fromValues(l, k), w, h), 0, 1);
+                        draw = Math.random();
+                        if (draw < objProbability) {
+                            // place object at (k, l, h);
+                            let v, h;
+                            if (k + l - (i + j) <= 1.0) {
+                                v = tlTri.vertices[0];
+                                n = tlTri.normals[0];
+                            }
+                            else {
+                                v = brTri.vertices[0];
+                                n = brTri.normals[0];
+                            }
+                            h = v[2] - ((l - v[0]) * n[0] + (k - v[1]) * n[1]) / n[2];
+                            terrainTris.push(generateObject(l, k, h));
+                        }
+                    }
                 }
             }
         }
@@ -629,36 +645,17 @@ function setupShaders() {
  * Setup view parameters
  */
 function setupView() {
-    // TODO
+    Eye = vec3.fromValues(TERRAIN_WIDTH / 2, 0, 0); // eye position in world space
+    Center = vec3.clone(defaultCenter); // view direction in world space
+    Up = vec3.clone(defaultUp); // view up vector in world space
+    viewDelta = 0.1; // how much to displace view with each key press
+    var rotateTheta = Math.PI / 10; // how much to rotate models by with each key press
 }
 
 /**
  * render the loaded model
  */
 function renderModels() {
-
-    /**
-     * construct the model transform matrix, based on model state
-     * @param {Object} currModel 
-     */
-    function makeModelTransform(currModel) {
-        var zAxis = vec3.create(),
-            sumRotation = mat4.create(),
-            temp = mat4.create(),
-            negCenter = vec3.create();
-
-        vec3.normalize(zAxis, vec3.cross(zAxis, currModel.xAxis, currModel.yAxis)); // get the new model z axis
-        mat4.set(sumRotation, // get the composite rotation
-            currModel.xAxis[0], currModel.yAxis[0], zAxis[0], 0,
-            currModel.xAxis[1], currModel.yAxis[1], zAxis[1], 0,
-            currModel.xAxis[2], currModel.yAxis[2], zAxis[2], 0,
-            0, 0, 0, 1);
-        vec3.negate(negCenter, currModel.center);
-        mat4.multiply(sumRotation, sumRotation, mat4.fromTranslation(temp, negCenter)); // rotate * -translate
-        mat4.multiply(sumRotation, mat4.fromTranslation(temp, currModel.center), sumRotation); // translate * rotate * -translate
-        mat4.fromTranslation(mMatrix, currModel.translation); // translate in model matrix
-        mat4.multiply(mMatrix, mMatrix, sumRotation); // rotate in model matrix
-    } // end make model transform
 
     var hMatrix = mat4.create(); // handedness matrix
     var pMatrix = mat4.create(); // projection matrix
@@ -683,8 +680,6 @@ function renderModels() {
     for (var whichTriSet = 0; whichTriSet < numTriangleSets; whichTriSet++) {
         currSet = inputTriangles[whichTriSet];
 
-        // make model transform, add to view project
-        makeModelTransform(currSet);
         mat4.multiply(hpvmMatrix, hpvMatrix, mMatrix); // handedness * project * view * model
         gl.uniformMatrix4fv(mMatrixULoc, false, mMatrix); // pass in the m matrix
         gl.uniformMatrix4fv(pvmMatrixULoc, false, hpvmMatrix); // pass in the hpvm matrix
