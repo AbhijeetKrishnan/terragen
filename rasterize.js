@@ -8,7 +8,7 @@ var defaultUp = vec3.fromValues(0, 0, 1); // default view up vector
 var lightAmbient = vec3.fromValues(1, 1, 1); // default light ambient emission
 var lightDiffuse = vec3.fromValues(1, 1, 1); // default light diffuse emission
 var lightSpecular = vec3.fromValues(1, 1, 1); // default light specular emission
-var lightPosition = vec3.fromValues(0, 0, 0); // default light position
+var lightPosition = vec3.fromValues(32, 32, 10); // default light position
 
 /* input model data */
 var gl = null; // the all powerful gl object. It's all here folks!
@@ -225,12 +225,12 @@ function loadModels() {
                 highlightColour: [255, 250, 250]
             }
         }
-        if (!(textureName in textures)) {
+        if (textureName && !(textureName in textures)) {
             textures[textureName] = gl.createTexture(); // new texture struct for model
-            var currTexture = textures[textureName]; // shorthand
+            let currTexture = textures[textureName]; // shorthand
             gl.bindTexture(gl.TEXTURE_2D, currTexture); // activate model's texture
             gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); // invert vertical texcoord v, load gray 1x1
-            var tex = generateTexture(TEX_WIDTH, TEX_HEIGHT, PERLIN_WIDTH, PERLIN_HEIGHT, textureParams[textureName].baseColour, textureParams[textureName].highlightColour);
+            let tex = generateTexture(TEX_WIDTH, TEX_HEIGHT, PERLIN_WIDTH, PERLIN_HEIGHT, textureParams[textureName].baseColour, textureParams[textureName].highlightColour);
             gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, tex);
             gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); // invert vertical texcoord v
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR); // use linear filter for magnification
@@ -247,7 +247,7 @@ function loadModels() {
      * @return {Array} - list of triangles
      */
     function generateTerrain(w, h) {
-        var terrainTris = [];
+        let terrainTris = [];
 
         const triMat = {
             ambient: [0.1, 0.1, 0.1],
@@ -255,7 +255,7 @@ function loadModels() {
             specular: [0.3, 0.3, 0.3],
             n: 15,
             alpha: 0.5,
-            texture: "grass"
+            texture: false
         };
         const triObj = {
             material: triMat,
@@ -271,14 +271,14 @@ function loadModels() {
             ]
         };
 
-        noise = new Perlin(PERLIN_WIDTH, PERLIN_HEIGHT);
-        objNoise = new Perlin(PERLIN_WIDTH, PERLIN_HEIGHT);
+        let noise = new Perlin(PERLIN_WIDTH, PERLIN_HEIGHT);
+        let objNoise = new Perlin(PERLIN_WIDTH, PERLIN_HEIGHT);
 
         function getNormal(v1, v2, v3) {
-            let v3_v1 = vec3.create();
-            vec3.subtract(v3_v1, v3, v1);
             let v2_v1 = vec3.create();
             vec3.subtract(v2_v1, v2, v1);
+            let v3_v1 = vec3.create();
+            vec3.subtract(v3_v1, v3, v1);
             let n = vec3.create();
             vec3.cross(n, v2_v1, v3_v1);
             vec3.normalize(n, n);
@@ -286,9 +286,9 @@ function loadModels() {
         }
 
         function generateTri(p1, p2, p3) {
-            let v1 = vec3.fromValues(p1[0], p1[1], transformRange(noise.getNoise(vec2.clone(p1), w, h), TERRAIN_MIN_DEPTH, TERRAIN_MAX_ELEVATION));
-            let v2 = vec3.fromValues(p2[0], p2[1], transformRange(noise.getNoise(vec2.clone(p2), w, h), TERRAIN_MIN_DEPTH, TERRAIN_MAX_ELEVATION));
-            let v3 = vec3.fromValues(p3[0], p3[1], transformRange(noise.getNoise(vec2.clone(p3), w, h), TERRAIN_MIN_DEPTH, TERRAIN_MAX_ELEVATION));
+            let v1 = vec3.fromValues(p1[0], p1[1], transformRange(noise.getNoise(p1, w, h), TERRAIN_MIN_DEPTH, TERRAIN_MAX_ELEVATION));
+            let v2 = vec3.fromValues(p2[0], p2[1], transformRange(noise.getNoise(p2, w, h), TERRAIN_MIN_DEPTH, TERRAIN_MAX_ELEVATION));
+            let v3 = vec3.fromValues(p3[0], p3[1], transformRange(noise.getNoise(p3, w, h), TERRAIN_MIN_DEPTH, TERRAIN_MAX_ELEVATION));
             let n = getNormal(v1, v2, v3);
 
             let currTriMat = Object.assign({}, triMat);
@@ -308,6 +308,7 @@ function loadModels() {
             } else {
                 tri.material.texture = "snow";
             }
+
             tri.vertices = [
                 [v1[0], v1[1], v1[2]],
                 [v2[0], v2[1], v2[2]],
@@ -337,6 +338,7 @@ function loadModels() {
             let currTriMat = Object.assign({}, triMat);
             let tri = Object.assign({}, triObj);
             tri.material = currTriMat;
+            tri.material.texture = "grass";
             tri.uvs = [
                 [0, 0],
                 [0, 1],
@@ -362,25 +364,25 @@ function loadModels() {
                 [n2[0], n2[1], n2[2]],
                 [n3[0], n3[1], n3[2]],
                 [n4[0], n4[1], n4[2]],
-                [0, 0, 1] // no idea why lol
+                [0, 0, -1] // no idea why lol
             ];
             return tri;
         }
 
-        for (var i = 0; i < h; i++) {
-            for (var j = 0; j < w; j++) {
+        for (let i = 0; i < h; i++) {
+            for (let j = 0; j < w; j++) {
                 // generating four corner vectors
-                var tl = vec2.fromValues(j, i);
-                var tr = vec2.fromValues(j, i + 1);
-                var bl = vec2.fromValues(j + 1, i);
-                var br = vec2.fromValues(j + 1, i + 1);
+                let tl = vec2.fromValues(j, i);
+                let tr = vec2.fromValues(j, i + 1);
+                let bl = vec2.fromValues(j + 1, i);
+                let br = vec2.fromValues(j + 1, i + 1);
 
                 // generating top-left triangle
-                var tlTri = generateTri(tl, bl, tr);
+                let tlTri = generateTri(tl, bl, tr);
                 terrainTris.push(tlTri);
 
                 // generating bottom-right triangle
-                var brTri = generateTri(br, tr, bl);
+                let brTri = generateTri(br, tr, bl);
                 terrainTris.push(brTri);
 
                 // generating objects
@@ -390,7 +392,7 @@ function loadModels() {
                         draw = Math.random();
                         if (draw < objProbability) {
                             // place object at (k, l, h);
-                            let v, h;
+                            let v, n, h;
                             if (k + l - (i + j) <= 1.0) {
                                 v = tlTri.vertices[0];
                                 n = tlTri.normals[0];
@@ -651,7 +653,7 @@ function setupView() {
     viewDelta = (TERRAIN_MAX_ELEVATION - TERRAIN_MIN_DEPTH) / 100;
     rotateTheta = Math.PI / 10;
 
-    lightPosition = vec3.fromValues(TERRAIN_WIDTH / 2, TERRAIN_HEIGHT / 2, TERRAIN_MAX_ELEVATION);
+    lightPosition = vec3.fromValues(TERRAIN_WIDTH / 2, 0, 30);
 }
 
 /**
@@ -710,15 +712,6 @@ function renderModels() {
 
     } // end for each triangle set
 } // end render model
-
-/**
- * Save canvas as image
- */
-function saveAsImage() {
-    var image = webGLCanvas.toDataURL("image/png").replace("image/png", "image/octet-stream"); // here is the most important part because if you dont replace you will get a DOM 18 exception.
-    window.location.href = image; // it will save to default download folder
-}
-
 
 /* MAIN -- HERE is where execution begins after window load */
 

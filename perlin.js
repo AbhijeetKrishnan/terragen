@@ -98,16 +98,17 @@ class Perlin {
     /**
      * Compute Perlin noise at world 2-D coordinates v
      * Reference: https://en.wikipedia.org/wiki/Perlin_noise#Implementation
-     * @param {vec2} v
+     * @param {vec2} vect
      * @param {Number} width - width of world grid
      * @param {Number} height - height of world grid
      * @return {Number} - in range [-1, 1]
      */
-    getNoise(v, width, height) {
+    getNoise(vect, width, height) {
 
         // Transform world coordinates to Perlin grid coordinates
         var oldRatio = vec2.fromValues(width, height);
         var newRatio = vec2.fromValues(this.IXMAX - 1, this.IYMAX - 1);
+        var v = vec2.clone(vect);
         vec2.multiply(v, v, newRatio);
         vec2.divide(v, v, oldRatio);
 
