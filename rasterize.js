@@ -1,14 +1,14 @@
 /* GLOBAL CONSTANTS AND VARIABLES */
 
 /* assignment specific globals */
-var defaultEye = vec3.fromValues(0, 0, 0); // default eye position in world space
-var defaultCenter = vec3.fromValues(0, 1, 0); // default view direction in world space
-var defaultUp = vec3.fromValues(0, 0, 1); // default view up vector
+var defaultEye = vec3.fromValues(-1.810965657234192, 36.399932861328125, 40.831521987915039); // default eye position in world space
+var defaultCenter = vec3.fromValues(62.18913650512695, 36.399932861328125, -9.168441772460938); // default view direction in world space
+var defaultUp = vec3.fromValues(0.30000001192092896, 0, 1); // default view up vector
 
 var lightAmbient = vec3.fromValues(1, 1, 1); // default light ambient emission
 var lightDiffuse = vec3.fromValues(1, 1, 1); // default light diffuse emission
 var lightSpecular = vec3.fromValues(1, 1, 1); // default light specular emission
-var lightPosition = vec3.fromValues(32, 32, 10); // default light position
+var lightPosition = vec3.fromValues(-1.810965657234192, 36.399932861328125, 40.831521987915039); // default light position
 
 /* input model data */
 var gl = null; // the all powerful gl object. It's all here folks!
@@ -364,7 +364,7 @@ function loadModels() {
                 [n2[0], n2[1], n2[2]],
                 [n3[0], n3[1], n3[2]],
                 [n4[0], n4[1], n4[2]],
-                [0, 0, -1] // no idea why lol
+                [0, 0, 1] // no idea why lol
             ];
             return tri;
         }
@@ -719,6 +719,6 @@ function main() {
     setupWebGL(); // set up the webGL environment
     loadModels(); // load in the models from tri file
     setupShaders(); // setup the webGL shaders
-    setupView(); // setup camera
+    // setupView(); // setup camera // can't figure out reason for this bug
     renderModels(); // draw the triangles using webGL
 } // end main
