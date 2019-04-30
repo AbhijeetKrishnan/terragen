@@ -8,9 +8,46 @@
     <script type="text/javascript" src="seedrandom.min.js"></script>
     <script type="text/javascript" src="perlin.js"></script>
     <script type="text/javascript" src="rasterize.js"></script>
+    <script type="text/javascript" src="interface.js"></script>
   </head>
 
   <body onload="main();">
     <canvas id="display" width="512" height="512"></canvas>
+    <br/><br/>
+    <button id="redraw" onclick="renderClick();">Render</button><br/><br/>
+    <form>
+      <fieldset>
+        <legend>Terrain size:</legend>
+        Terrain width: 
+        <input type="number" id="terrain-width" min="1" value="64"><br/>
+        Terrain height: 
+        <input type="number" id="terrain-height" min="1" value="64"><br/>
+        Terrain depth: 
+        <input type="number" id="terrain-depth" value="0"><br/>
+        Terrain elevation: 
+        <input type="number" id="terrain-elevation" value="32"><br/>
+      </fieldset>
+      <br/>
+      <fieldset>
+        <legend>Perlin grid size:</legend>
+        Perlin grid width: 
+        <input type="number" id="perlin-width" min="1" value="16"><br/>
+        Perlin grid height: 
+        <input type="number" id="perlin-height" min="1" value="16"><br/>
+        </fieldset>
+        <br/>
+        <fieldset>
+          <legend>Texture size:</legend>
+          Texture width: 
+          <input type="number" id="tex-width" min="1" value="256"><br/>
+          Texture height: 
+          <input type="number" id="tex-height" min="1" value="256"><br/>
+        </fieldset>
+        <br/>
+        Triangle step size: 
+        <input type="number" id="tri-step-size" value="1" step="0.1"><br/>
+        Object step size: 
+        <input type="number" id="obj-step-size" value="0.4" step="0.1"><br/>
+    </form>
   </body>
 </html>

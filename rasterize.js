@@ -46,18 +46,19 @@ var rotateTheta = Math.PI / 10; // how much to rotate models by with each key pr
 var webGLCanvas;
 
 /* Terrain generation globals */
-const TERRAIN_WIDTH = 64;
-const TERRAIN_HEIGHT = 64;
-const TERRAIN_MIN_DEPTH = 0;
-const TERRAIN_MAX_ELEVATION = 32;
+let TERRAIN_WIDTH = 64;
+let TERRAIN_HEIGHT = 64;
+let TERRAIN_MIN_DEPTH = 0;
+let TERRAIN_MAX_ELEVATION = 32;
 
-const PERLIN_WIDTH = 16;
-const PERLIN_HEIGHT = 16;
+let PERLIN_WIDTH = 16;
+let PERLIN_HEIGHT = 16;
 
-const TEX_WIDTH = 256;
-const TEX_HEIGHT = 256;
+let TEX_WIDTH = 256;
+let TEX_HEIGHT = 256;
 
-const OBJ_STEP_SIZE = 0.4; // ought to be < 1
+let TRI_STEP_SIZE = 1;
+let OBJ_STEP_SIZE = 0.4; // ought to be < 1
 
 // ASSIGNMENT HELPER FUNCTIONS
 
@@ -369,13 +370,13 @@ function loadModels() {
             return tri;
         }
 
-        for (let i = 0; i < h; i++) {
-            for (let j = 0; j < w; j++) {
+        for (let i = 0; i < h; i += TRI_STEP_SIZE) {
+            for (let j = 0; j < w; j+= TRI_STEP_SIZE) {
                 // generating four corner vectors
                 let tl = vec2.fromValues(j, i);
-                let tr = vec2.fromValues(j, i + 1);
-                let bl = vec2.fromValues(j + 1, i);
-                let br = vec2.fromValues(j + 1, i + 1);
+                let tr = vec2.fromValues(j, i + TRI_STEP_SIZE);
+                let bl = vec2.fromValues(j + TRI_STEP_SIZE, i);
+                let br = vec2.fromValues(j + TRI_STEP_SIZE, i + TRI_STEP_SIZE);
 
                 // generating top-left triangle
                 let tlTri = generateTri(tl, bl, tr);
@@ -386,8 +387,8 @@ function loadModels() {
                 terrainTris.push(brTri);
 
                 // generating objects
-                for (let k = i; k < i + 1; k += OBJ_STEP_SIZE) {
-                    for (let l = j; l < j + 1; l += OBJ_STEP_SIZE) {
+                for (let k = i; k < i + TRI_STEP_SIZE; k += OBJ_STEP_SIZE) {
+                    for (let l = j; l < j + TRI_STEP_SIZE; l += OBJ_STEP_SIZE) {
                         objProbability = transformRange(objNoise.getNoise(vec2.fromValues(l, k), w, h), 0, 1);
                         draw = Math.random();
                         if (draw < objProbability) {

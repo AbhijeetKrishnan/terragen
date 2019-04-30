@@ -122,11 +122,11 @@ class Perlin {
             y0 -= 1;
         var y1 = y0 + 1;
 
-        console.assert(0 <= x0 && x0 < this.IXMAX);
-        console.assert(0 <= x1 && x1 < this.IXMAX);
+        console.assert(0 <= x0 && x0 < this.IXMAX, "x0 = " + x0);
+        console.assert(0 <= x1 && x1 < this.IXMAX, "x1 = " + x1);
 
-        console.assert(0 <= y0 && y0 < this.IYMAX);
-        console.assert(0 <= y1 && y1 < this.IYMAX);
+        console.assert(0 <= y0 && y0 < this.IYMAX, "y0 = " + y0);
+        console.assert(0 <= y1 && y1 < this.IYMAX, "y1 = " + y1);
 
         // Determine interpolation weights
         var sx = Perlin.fade(v[0] - x0);
