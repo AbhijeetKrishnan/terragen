@@ -53,8 +53,6 @@ const TERRAIN_MAX_ELEVATION = 32;
 const PERLIN_WIDTH = 16;
 const PERLIN_HEIGHT = 16;
 
-INPUT_URL = "https://raw.githubusercontent.com/MystikNinja/terragen/master/"
-
 // ASSIGNMENT HELPER FUNCTIONS
 
 /**
@@ -158,6 +156,19 @@ function setupWebGL() {
 } // end setupWebGL
 
 /**
+ * Transform value in range [oldMax, oldMin] to range [newMax, newMin]
+ * @param {Number} origVal  
+ * @param {Number} newMin 
+ * @param {Number} newMax
+ * @param {Number} oldMin 
+ * @param {Number} oldMax
+ * @return {Number} 
+ */
+function transformRange(origVal, newMin, newMax, oldMin = -1, oldMax = 1) {
+    return (origVal - oldMin) * (newMax - newMin) / (oldMax - oldMin) + newMin;
+}
+
+/**
  * read models in, load them into webgl buffers
  */
 function loadModels() {
@@ -191,10 +202,6 @@ function loadModels() {
                 ctx.fillRect(j, i, 1, 1);
             }
         }
-        //var image_data = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        //var rgba_byte_array = image_data.data;
-        //console.log(rgba_byte_array);
-        //return rgba_byte_array;
         return canvas;
     }
 
@@ -235,19 +242,6 @@ function loadModels() {
     } // end load texture
 
     /**
-     * Transform value in range [oldMax, oldMin] to range [newMax, newMin]
-     * @param {Number} origVal  
-     * @param {Number} newMin 
-     * @param {Number} newMax
-     * @param {Number} oldMin 
-     * @param {Number} oldMax
-     * @return {Number} 
-     */
-    function transformRange(origVal, newMin, newMax, oldMin=-1, oldMax=1) {
-        return (origVal - oldMin) * (newMax - newMin) / (oldMax - oldMin) + newMin;
-    }
-
-    /**
      * Generate triangles for terrain of size w x h
      * @param {Number} w 
      * @param {Number} h 
@@ -256,15 +250,13 @@ function loadModels() {
     function generateTerrain(w, h) {
         var terrainTris = [];
 
-        var colour = [Math.random(), Math.random(), Math.random()];
-
         const triMat = {
             ambient: [0.1, 0.1, 0.1],
             diffuse: [0.8, 0.8, 0.8],
             specular: [0.3, 0.3, 0.3],
             n: 15,
             alpha: 0.5,
-            texture: "download.png"
+            texture: "grass"
         };
         const triObj = {
             material: triMat,
@@ -281,32 +273,40 @@ function loadModels() {
         };
 
         noise = new Perlin(PERLIN_WIDTH, PERLIN_HEIGHT);
+        objNoise = new Perlin(PERLIN_WIDTH, PERLIN_HEIGHT);
 
-        function generateTri(p1, p2, p3) {
-            var v1 = vec3.fromValues(p1[0], p1[1], transformRange(noise.getNoise(vec2.clone(p1), w, h), TERRAIN_MIN_DEPTH, TERRAIN_MAX_ELEVATION));
-            var v2 = vec3.fromValues(p2[0], p2[1], transformRange(noise.getNoise(vec2.clone(p2), w, h), TERRAIN_MIN_DEPTH, TERRAIN_MAX_ELEVATION));
-            var v3 = vec3.fromValues(p3[0], p3[1], transformRange(noise.getNoise(vec2.clone(p3), w, h), TERRAIN_MIN_DEPTH, TERRAIN_MAX_ELEVATION));
-            var v3_v1 = vec3.create();
+        function getNormal(v1, v2, v3) {
+            let v3_v1 = vec3.create();
             vec3.subtract(v3_v1, v3, v1);
-            var v2_v1 = vec3.create();
+            let v2_v1 = vec3.create();
             vec3.subtract(v2_v1, v2, v1);
-            var n = vec3.create();
+            let n = vec3.create();
             vec3.cross(n, v3_v1, v2_v1);
             vec3.normalize(n, n);
+            return n;
+        }
 
-            var currTriMat = Object.assign({}, triMat);
-            var tri = Object.assign({}, triObj);
+        function generateTri(p1, p2, p3) {
+            let v1 = vec3.fromValues(p1[0], p1[1], transformRange(noise.getNoise(vec2.clone(p1), w, h), TERRAIN_MIN_DEPTH, TERRAIN_MAX_ELEVATION));
+            let v2 = vec3.fromValues(p2[0], p2[1], transformRange(noise.getNoise(vec2.clone(p2), w, h), TERRAIN_MIN_DEPTH, TERRAIN_MAX_ELEVATION));
+            let v3 = vec3.fromValues(p3[0], p3[1], transformRange(noise.getNoise(vec2.clone(p3), w, h), TERRAIN_MIN_DEPTH, TERRAIN_MAX_ELEVATION));
+            let n = getNormal(v1, v2, v3);
+
+            let currTriMat = Object.assign({}, triMat);
+            let tri = Object.assign({}, triObj);
             tri.material = currTriMat;
-            var ht = (v1[2] + v2[2] + v3[2]) / 3;
-            var lim1 = TERRAIN_MIN_DEPTH + 0.4 * (TERRAIN_MAX_ELEVATION - TERRAIN_MIN_DEPTH);
-            var lim2 = TERRAIN_MIN_DEPTH + 0.5 * (TERRAIN_MAX_ELEVATION - TERRAIN_MIN_DEPTH);
+
+            let ht = (v1[2] + v2[2] + v3[2]) / 3;
+            let texture1_share = 0.4;
+            let texture2_share = 0.5;
+            console.assert(texture1_share + texture2_share <= 1.0);
+            let lim1 = TERRAIN_MIN_DEPTH + texture1_share * (TERRAIN_MAX_ELEVATION - TERRAIN_MIN_DEPTH);
+            let lim2 = TERRAIN_MIN_DEPTH + texture2_share * (TERRAIN_MAX_ELEVATION - TERRAIN_MIN_DEPTH);
             if (ht < lim1) {
                 tri.material.texture = "snow";
-            }
-            else if (ht < lim2) {
+            } else if (ht < lim2) {
                 tri.material.texture = "rock";
-            }
-            else {
+            } else {
                 tri.material.texture = "grass";
             }
             tri.vertices = [
@@ -321,6 +321,53 @@ function loadModels() {
             ];
             return tri;
         }
+
+        function generateObject(x, y, z) {
+            let v1 = vec3.fromValues(x - 0.1, y - 0.1, z);
+            let v2 = vec3.fromValues(x - 0.1, y + 0.1, z);
+            let v3 = vec3.fromValues(x + 0.1, y + 0.1, z);
+            let v4 = vec3.fromValues(x + 0.1, y - 0.1, z);
+            let v5 = vec3.fromValues(x, y, z - 1);
+
+            let n1 = getNormal(v1, v5, v2);
+            let n2 = getNormal(v2, v5, v3);
+            let n3 = getNormal(v3, v5, v4);
+            let n4 = getNormal(v4, v5, v1);
+
+            let currTriMat = Object.assign({}, triMat);
+            let tri = Object.assign({}, triObj);
+            tri.material = currTriMat;
+            tri.uvs = [
+                [0, 0],
+                [0, 1],
+                [1, 1],
+                [1, 0],
+                [0, 0]
+            ];
+            tri.triangles = [
+                [0, 4, 1],
+                [1, 4, 2],
+                [2, 4, 3],
+                [3, 4, 1]
+            ];
+
+            tri.vertices = [
+                [v1[0], v1[1], v1[2]],
+                [v2[0], v2[1], v2[2]],
+                [v3[0], v3[1], v3[2]],
+                [v4[0], v4[1], v4[2]],
+                [v5[0], v5[1], v5[2]],
+            ];
+            tri.normals = [
+                [n1[0], n1[1], n1[2]],
+                [n2[0], n2[1], n2[2]],
+                [n3[0], n3[1], n3[2]],
+                [n4[0], n4[1], n4[2]],
+                [0, 0, -1]
+            ];
+            return tri;
+        }
+
         for (var i = 0; i < h; i++) {
             for (var j = 0; j < w; j++) {
                 // generating four corner vectors
@@ -332,12 +379,19 @@ function loadModels() {
                 // generating top-left triangle
                 var tlTri = generateTri(tl, bl, tr);
                 terrainTris.push(tlTri);
-                //console.log("tlTri " + terrainTris[terrainTris.length-1].material.texture);
 
                 // generating bottom-right triangle
                 var brTri = generateTri(br, tr, bl);
                 terrainTris.push(brTri);
-                //console.log("brTri " + terrainTris[terrainTris.length-1].material.texture);
+
+                // generating objects
+                objProbability = transformRange(objNoise.getNoise(vec2.fromValues(j, i), w, h), 0, 1);
+                draw = Math.random();
+                if (draw < objProbability) {
+                    // place object at (k, l, h);
+                    ht = tlTri.vertices[0][2];
+                    terrainTris.push(generateObject(j, i, ht));
+                }
             }
         }
         return terrainTris;
