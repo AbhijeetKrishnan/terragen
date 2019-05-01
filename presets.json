@@ -52,7 +52,7 @@
                 "name": "indigo",
                 "base": [75, 0, 130],
                 "highlight": [138, 43, 226],
-                "share": 0.3,
+                "share": 0.4,
                 "width": 256,
                 "height": 256
             },
@@ -60,7 +60,7 @@
                 "name": "blue",
                 "base": [0, 0, 255],
                 "highlight": [30, 144, 255],
-                "share": 0.4,
+                "share": 0.5,
                 "width": 256,
                 "height": 256
             },

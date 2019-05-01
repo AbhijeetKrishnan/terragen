@@ -269,13 +269,16 @@ function loadModels() {
             textures[textureName] = gl.createTexture(); // new texture struct for model
             let currTexture = textures[textureName]; // shorthand
             gl.bindTexture(gl.TEXTURE_2D, currTexture); // activate model's texture
-            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); // invert vertical texcoord v, load gray 1x1
+            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); // invert vertical texcoord v,
             let texDesc;
             for (let tex = 0; tex < texturePresets[TEX_PRESET].textures.length; tex++) {
                 if (texturePresets[TEX_PRESET].textures[tex].name == textureName) {
                     texDesc = texturePresets[TEX_PRESET].textures[tex];
                     break;
                 }
+            }
+            if (texturePresets[TEX_PRESET].objTex.name == textureName) {
+                texDesc = texturePresets[TEX_PRESET].objTex;
             }
             let tex = generateTexture(PERLIN_WIDTH, PERLIN_HEIGHT, texDesc);
             gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, tex);
@@ -337,7 +340,7 @@ function loadModels() {
             return n;
         }
 
-        function generateTri(p1, p2, p3) {
+        function generateTri(p1, p2, p3, preset) {
             let v1 = vec3.fromValues(p1[0], p1[1], transformRange(noise.getNoise(p1, w, h), TERRAIN_MIN_DEPTH, TERRAIN_MAX_ELEVATION));
             let v2 = vec3.fromValues(p2[0], p2[1], transformRange(noise.getNoise(p2, w, h), TERRAIN_MIN_DEPTH, TERRAIN_MAX_ELEVATION));
             let v3 = vec3.fromValues(p3[0], p3[1], transformRange(noise.getNoise(p3, w, h), TERRAIN_MIN_DEPTH, TERRAIN_MAX_ELEVATION));
@@ -369,7 +372,7 @@ function loadModels() {
             return tri;
         }
 
-        function generateObject(x, y, z) {
+        function generateObject(x, y, z, preset) {
             /* define model */
             let v1 = vec3.fromValues(x - 0.1, y - 0.1, z);
             let v2 = vec3.fromValues(x - 0.1, y + 0.1, z);
@@ -385,7 +388,7 @@ function loadModels() {
             let currTriMat = Object.assign({}, triMat);
             let tri = Object.assign({}, triObj);
             tri.material = currTriMat;
-            tri.material.texture = "grass";
+            tri.material.texture = texturePresets[preset].objTex.name;
             tri.uvs = [
                 [0, 0],
                 [0, 1],
@@ -425,11 +428,11 @@ function loadModels() {
                 let br = vec2.fromValues(j + TRI_STEP_SIZE, i + TRI_STEP_SIZE);
 
                 // generating top-left triangle
-                let tlTri = generateTri(tl, bl, tr);
+                let tlTri = generateTri(tl, bl, tr, preset);
                 terrainTris.push(tlTri);
 
                 // generating bottom-right triangle
-                let brTri = generateTri(br, tr, bl);
+                let brTri = generateTri(br, tr, bl, preset);
                 terrainTris.push(brTri);
 
                 // generating objects
@@ -449,7 +452,7 @@ function loadModels() {
                                 n = brTri.normals[0];
                             }
                             h = v[2] - ((l - v[0]) * n[0] + (k - v[1]) * n[1]) / n[2];
-                            terrainTris.push(generateObject(l, k, h));
+                            terrainTris.push(generateObject(l, k, h, preset));
                         }
                     }
                 }
