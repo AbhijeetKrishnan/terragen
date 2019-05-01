@@ -7,7 +7,7 @@
                 "name": "grass",
                 "base": [53, 94, 59],
                 "highlight": [19, 136, 8],
-                "share": 0.5,
+                "share": 0.3,
                 "width": 256,
                 "height": 256
             },
@@ -15,7 +15,7 @@
                 "name": "rock",
                 "base": [75, 44, 13],
                 "highlight": [126, 83, 16],
-                "share": 0.7,
+                "share": 0.5,
                 "width": 256,
                 "height": 256
             },
@@ -77,7 +77,7 @@
                 "name": "yellow",
                 "base": [255, 255, 0],
                 "highlight": [128, 128, 0],
-                "share": 0.6,
+                "share": 0.5,
                 "width": 256,
                 "height": 256
             },
@@ -85,7 +85,7 @@
                 "name": "orange",
                 "base": [255, 140, 0],
                 "highlight": [255, 99, 71],
-                "share": 0.8,
+                "share": 0.7,
                 "width": 256,
                 "height": 256
             },
@@ -115,7 +115,7 @@
                 "name": "ash",
                 "base": [201, 199, 199],
                 "highlight": [150, 147, 147],
-                "share": 0.5,
+                "share": 0.3,
                 "width": 256,
                 "height": 256
             },
@@ -123,7 +123,7 @@
                 "name": "burnt-rock",
                 "base": [45, 44, 44],
                 "highlight": [101, 83, 83],
-                "share": 0.8,
+                "share": 0.7,
                 "width": 256,
                 "height": 256
             },

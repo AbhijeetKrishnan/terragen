@@ -58,8 +58,8 @@ let TEX_WIDTH = 256;
 let TEX_HEIGHT = 256;
 let TEX_PRESET = 0; // index of texture preset
 
-let TRI_STEP_SIZE = 1;
-let OBJ_STEP_SIZE = 0.4; // ought to be < 1
+let TRI_STEP_SIZE = 0.5;
+let OBJ_STEP_SIZE = 0.8; // ought to be < 1
 
 // ASSIGNMENT HELPER FUNCTIONS
 
@@ -341,11 +341,14 @@ function loadModels() {
         }
 
         function generateTri(p1, p2, p3, preset) {
-            let heightFactor = (p1[0] + p1[1]) / (TERRAIN_WIDTH + TERRAIN_HEIGHT);
-            heightFactor = 1;
-            let v1 = vec3.fromValues(p1[0], p1[1], transformRange(noise.getNoise(p1, w, h), TERRAIN_MIN_DEPTH, TERRAIN_MAX_ELEVATION) * heightFactor);
-            let v2 = vec3.fromValues(p2[0], p2[1], transformRange(noise.getNoise(p2, w, h), TERRAIN_MIN_DEPTH, TERRAIN_MAX_ELEVATION) * heightFactor);
-            let v3 = vec3.fromValues(p3[0], p3[1], transformRange(noise.getNoise(p3, w, h), TERRAIN_MIN_DEPTH, TERRAIN_MAX_ELEVATION) * heightFactor);
+            function getHeightFactor(p) {
+                let retVal = (p[0] + p[1]) / (TERRAIN_WIDTH + TERRAIN_HEIGHT);
+                retVal = retVal * retVal;
+                return retVal;
+            }
+            let v1 = vec3.fromValues(p1[0], p1[1], transformRange(noise.getNoise(p1, w, h), TERRAIN_MIN_DEPTH, TERRAIN_MAX_ELEVATION) * getHeightFactor(p1));
+            let v2 = vec3.fromValues(p2[0], p2[1], transformRange(noise.getNoise(p2, w, h), TERRAIN_MIN_DEPTH, TERRAIN_MAX_ELEVATION) * getHeightFactor(p2));
+            let v3 = vec3.fromValues(p3[0], p3[1], transformRange(noise.getNoise(p3, w, h), TERRAIN_MIN_DEPTH, TERRAIN_MAX_ELEVATION) * getHeightFactor(p3));
             let n = getNormal(v1, v2, v3);
 
             let currTriMat = Object.assign({}, triMat);
