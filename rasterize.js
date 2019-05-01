@@ -342,9 +342,10 @@ function loadModels() {
 
         function generateTri(p1, p2, p3, preset) {
             let heightFactor = (p1[0] + p1[1]) / (TERRAIN_WIDTH + TERRAIN_HEIGHT);
-            let v1 = vec3.fromValues(p1[0], p1[1], transformRange(noise.getNoise(p1, w, h) * heightFactor, TERRAIN_MIN_DEPTH, TERRAIN_MAX_ELEVATION));
-            let v2 = vec3.fromValues(p2[0], p2[1], transformRange(noise.getNoise(p2, w, h) * heightFactor, TERRAIN_MIN_DEPTH, TERRAIN_MAX_ELEVATION));
-            let v3 = vec3.fromValues(p3[0], p3[1], transformRange(noise.getNoise(p3, w, h) * heightFactor, TERRAIN_MIN_DEPTH, TERRAIN_MAX_ELEVATION));
+            heightFactor = 1.0;
+            let v1 = vec3.fromValues(p1[0], p1[1], transformRange(noise.getNoise(p1, w, h), TERRAIN_MIN_DEPTH, TERRAIN_MAX_ELEVATION));
+            let v2 = vec3.fromValues(p2[0], p2[1], transformRange(noise.getNoise(p2, w, h), TERRAIN_MIN_DEPTH, TERRAIN_MAX_ELEVATION));
+            let v3 = vec3.fromValues(p3[0], p3[1], transformRange(noise.getNoise(p3, w, h), TERRAIN_MIN_DEPTH, TERRAIN_MAX_ELEVATION));
             let n = getNormal(v1, v2, v3);
 
             let currTriMat = Object.assign({}, triMat);

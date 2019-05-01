@@ -115,7 +115,7 @@
                 "name": "ash",
                 "base": [201, 199, 199],
                 "highlight": [150, 147, 147],
-                "share": 0.3,
+                "share": 0.4,
                 "width": 256,
                 "height": 256
             },
@@ -123,13 +123,13 @@
                 "name": "burnt-rock",
                 "base": [45, 44, 44],
                 "highlight": [101, 83, 83],
-                "share": 0.6,
+                "share": 0.5,
                 "width": 256,
                 "height": 256
             },
             {
                 "name": "lava",
-                "base": [250, 110, 85],
+                "base": [255, 69, 0],
                 "highlight": [246, 255, 99],
                 "share": 1.0,
                 "width": 256,
