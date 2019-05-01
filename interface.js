@@ -26,6 +26,7 @@ function setParameters() {
 
     TEX_WIDTH = Number(document.getElementById("tex-width").value);
     TEX_HEIGHT = Number(document.getElementById("tex-height").value);
+    TEX_PRESET = Number(document.getElementById("tex-preset").value);
 
     TRI_STEP_SIZE = Number(document.getElementById("tri-step-size").value);
     OBJ_STEP_SIZE = Number(document.getElementById("obj-step-size").value);

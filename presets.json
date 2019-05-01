@@ -7,7 +7,7 @@
                 "name": "grass",
                 "base": [53, 94, 59],
                 "highlight": [19, 136, 8],
-                "share": 0.6,
+                "share": 0.4,
                 "width": 256,
                 "height": 256
             },
@@ -31,6 +31,75 @@
         "objTex": {
             "name": "grass",
             "base": [53, 94, 59],
+            "highlight": [19, 136, 8],
+            "width": 256,
+            "height": 256
+        }
+    },
+    {
+        "name": "rainbow",
+        "layers": 7,
+        "textures": [
+            {
+                "name": "violet",
+                "base": [238, 130, 238],
+                "highlight": [255, 0, 255],
+                "share": 0.2,
+                "width": 256,
+                "height": 256
+            },
+            {
+                "name": "indigo",
+                "base": [75, 0, 130],
+                "highlight": [138, 43, 226],
+                "share": 0.3,
+                "width": 256,
+                "height": 256
+            },
+            {
+                "name": "blue",
+                "base": [0, 0, 255],
+                "highlight": [30, 144, 255],
+                "share": 0.4,
+                "width": 256,
+                "height": 256
+            },
+            {
+                "name": "green",
+                "base": [0, 128, 0],
+                "highlight": [152, 251, 152],
+                "share": 0.6,
+                "width": 256,
+                "height": 256
+            },
+            {
+                "name": "yellow",
+                "base": [255, 255, 0],
+                "highlight": [128, 128, 0],
+                "share": 0.7,
+                "width": 256,
+                "height": 256
+            },
+            {
+                "name": "orange",
+                "base": [255, 140, 0],
+                "highlight": [255, 99, 71],
+                "share": 0.9,
+                "width": 256,
+                "height": 256
+            },
+            {
+                "name": "red",
+                "base": [178, 34, 34],
+                "highlight": [250, 128, 114],
+                "share": 1.0,
+                "width": 256,
+                "height": 256
+            }
+        ],
+        "objTex": {
+            "name": "pink",
+            "base": [255, 105, 180],
             "highlight": [19, 136, 8],
             "width": 256,
             "height": 256
