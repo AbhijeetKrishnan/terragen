@@ -379,8 +379,6 @@ function loadModels() {
 
         function generateObject(x, y, z, preset) {
             /* define model */
-            x += transformRange(Math.random(), TRI_STEP_SIZE / 10, TRI_STEP_SIZE, 0, 1);
-            y += transformRange(Math.random(), TRI_STEP_SIZE / 10, TRI_STEP_SIZE, 0, 1);
             let v1 = vec3.fromValues(x - 0.1, y - 0.1, z);
             let v2 = vec3.fromValues(x - 0.1, y + 0.1, z);
             let v3 = vec3.fromValues(x + 0.1, y + 0.1, z);
@@ -449,8 +447,12 @@ function loadModels() {
                         draw = Math.random();
                         if (draw < objProbability) {
                             // place object at (k, l, h);
+                            let x = l;
+                            let y = k;
+                            x += transformRange(Math.random(), TRI_STEP_SIZE / 10, TRI_STEP_SIZE, 0, 1);
+                            y += transformRange(Math.random(), TRI_STEP_SIZE / 10, TRI_STEP_SIZE, 0, 1);
                             let v, n, h;
-                            if (k + l - (i + j) <= 1.0) {
+                            if (x + y - (i + j) <= 1.0) {
                                 v = tlTri.vertices[0];
                                 n = tlTri.normals[0];
                             }
@@ -458,9 +460,9 @@ function loadModels() {
                                 v = brTri.vertices[0];
                                 n = brTri.normals[0];
                             }
-                            h = v[2] - ((l - v[0]) * n[0] + (k - v[1]) * n[1]) / n[2];
+                            h = v[2] - ((x - v[0]) * n[0] + (y - v[1]) * n[1]) / n[2];
                             if (h < TERRAIN_MIN_DEPTH + texturePresets[preset].objCutoff * (TERRAIN_MAX_ELEVATION - TERRAIN_MIN_DEPTH))
-                                terrainTris.push(generateObject(l, k, h, preset));
+                                terrainTris.push(generateObject(x, y, h, preset));
                         }
                     }
                 }
