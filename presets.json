@@ -138,8 +138,8 @@
         ],
         "objTex": {
             "name": "burnt-rock",
-            "base": [53, 94, 59],
-            "highlight": [19, 136, 8],
+            "base": [45, 44, 44],
+            "highlight": [101, 83, 83],
             "width": 256,
             "height": 256
         },
