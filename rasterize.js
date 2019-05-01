@@ -23,6 +23,8 @@ var uvBuffers = []; // uv coord lists by set, in duples
 var triangleBuffers = []; // indices into vertexBuffers by set, in triples
 var textures = {}; // texture imagery by set
 
+let texturePresets = [];
+
 /* shader parameter locations */
 var vPosAttribLoc; // where to put position for vertex shader
 var vNormAttribLoc; // where to put normal for vertex shader
@@ -43,8 +45,6 @@ var Up = vec3.clone(defaultUp); // view up vector in world space
 var viewDelta = 0.1; // how much to displace view with each key press
 var rotateTheta = Math.PI / 10; // how much to rotate models by with each key press
 
-var webGLCanvas;
-
 /* Terrain generation globals */
 let TERRAIN_WIDTH = 64;
 let TERRAIN_HEIGHT = 64;
@@ -56,11 +56,39 @@ let PERLIN_HEIGHT = 16;
 
 let TEX_WIDTH = 256;
 let TEX_HEIGHT = 256;
+let TEX_PRESET = 0; // index of texture preset
 
 let TRI_STEP_SIZE = 1;
 let OBJ_STEP_SIZE = 0.4; // ought to be < 1
 
 // ASSIGNMENT HELPER FUNCTIONS
+
+// get the JSON file from the passed URL
+function getJSONFile(url, descr) {
+    try {
+        if ((typeof(url) !== "string") || (typeof(descr) !== "string"))
+            throw "getJSONFile: parameter not a string";
+        else {
+            var httpReq = new XMLHttpRequest(); // a new http request
+            httpReq.open("GET",url,false); // init the request
+            httpReq.send(null); // send the request
+            var startTime = Date.now();
+            while ((httpReq.status !== 200) && (httpReq.readyState !== XMLHttpRequest.DONE)) {
+                if ((Date.now()-startTime) > 3000)
+                    break;
+            } // until its loaded or we time out after three seconds
+            if ((httpReq.status !== 200) || (httpReq.readyState !== XMLHttpRequest.DONE))
+                throw "Unable to open " + descr + " file!";
+            else
+                return JSON.parse(httpReq.response); 
+        } // end if good params
+    } // end try    
+    
+    catch(e) {
+        console.log(e);
+        return(String.null);
+    }
+}
 
 /**
  * Function to handle keypresses
@@ -140,7 +168,7 @@ function setupWebGL() {
     document.onkeydown = handleKeyDown; // call this when key pressed
 
     // create a webgl canvas and set it up
-    webGLCanvas = document.getElementById("display"); // create a webgl canvas
+    let webGLCanvas = document.getElementById("display"); // create a webgl canvas
     gl = webGLCanvas.getContext("webgl"); // get a webgl object from it
     try {
         if (gl == null) {
@@ -175,25 +203,48 @@ function transformRange(origVal, newMin, newMax, oldMin = -1, oldMax = 1) {
  */
 function loadModels() {
 
+    function loadTexPresets() {
+        INPUT_URL = "https://raw.githubusercontent.com/MystikNinja/terragen/master/presets.json";
+        texturePresets = getJSONFile(INPUT_URL, "presets");
+
+        // validate
+        try {
+            for (let pre = 0; pre < texturePresets.length; pre++) {
+                if (texturePresets[pre].layers != texturePresets[pre].textures.length) {
+                    throw "Number of layers do not match defined textures for preset" + texturePresets[pre].name;
+                }
+                let share = texturePresets[pre].textures[0].share;
+                for (let tex = 1; tex < texturePresets[pre].layers; tex++) {
+                    if (share > texturePresets[pre].textures[tex].share) {
+                        throw "Texture shares for preset " + texturePresets[pre].name + " not in non-decreasing order";
+                    }
+                    share = texturePresets[pre].textures[tex].share
+                }
+                if (share != 1.0) {
+                    throw "Share of textures for preset " + texturePresets[pre].name + " does not end at 1.0";
+                }
+            }
+        } catch (e) {
+            console.log(e);
+        }
+    }
+
     /**
      * generates a texture by interpolating between baseColour and highlightColour based on noise value
-     * @param {Number} texWidth width of texture
-     * @param {Number} texHeight height of texture
      * @param {Number} perlinWidth width of Perlin grid size
      * @param {Number} perlinHeight height of Perlin grid size
-     * @param {Array} baseColour
-     * @param {Array} hightlightColour
+     * @param {Object} texDesc description of texture to be generated
      * @return {HTMLCanvasElement} 
      */
-    function generateTexture(texWidth, texHeight, perlinWidth, perlinHeight, baseColour, highlightColour) {
+    function generateTexture(perlinWidth, perlinHeight, texDesc) {
         var canvas = document.createElement('canvas'); // Ref: https://stackoverflow.com/questions/3892010/create-2d-context-without-canvas
-        canvas.width = texWidth;
-        canvas.height = texHeight;
+        canvas.width = texDesc.width;
+        canvas.height = texDesc.height;
         var ctx = canvas.getContext('2d');
         var w = canvas.width;
         var h = canvas.height;
-        baseColour = vec3.fromValues(baseColour[0], baseColour[1], baseColour[2]);
-        highlightColour = vec3.fromValues(highlightColour[0], highlightColour[1], highlightColour[2]);
+        baseColour = vec3.fromValues(texDesc.base[0], texDesc.base[1], texDesc.base[2]);
+        highlightColour = vec3.fromValues(texDesc.hightlight[0], texDesc.hightlight[1], texDesc.hightlight[2]);
         perlin = new Perlin(perlinWidth, perlinHeight); // could possible vary this as a ratio of world size
         for (var i = 0; i < h; i++) {
             for (var j = 0; j < w; j++) {
@@ -212,26 +263,19 @@ function loadModels() {
      * @param {string} textureName 
      */
     function loadTexture(textureName) {
-        const textureParams = {
-            grass: {
-                baseColour: [53, 94, 59],
-                highlightColour: [19, 136, 8]
-            },
-            rock: {
-                baseColour: [123, 63, 0],
-                highlightColour: [210, 105, 30]
-            },
-            snow: {
-                baseColour: [240, 234, 214],
-                highlightColour: [255, 250, 250]
-            }
-        }
         if (textureName && !(textureName in textures)) {
             textures[textureName] = gl.createTexture(); // new texture struct for model
             let currTexture = textures[textureName]; // shorthand
             gl.bindTexture(gl.TEXTURE_2D, currTexture); // activate model's texture
             gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); // invert vertical texcoord v, load gray 1x1
-            let tex = generateTexture(TEX_WIDTH, TEX_HEIGHT, PERLIN_WIDTH, PERLIN_HEIGHT, textureParams[textureName].baseColour, textureParams[textureName].highlightColour);
+            let texDesc;
+            for (let tex = 0; tex < texturePresets[TEX_PRESET].textures.length; tex++) {
+                if (texturePresets[TEX_PRESET].textures.name == textureName) {
+                    texDesc = texturePresets[TEX_PRESET].textures[tex];
+                    break;
+                }
+            }
+            let tex = generateTexture(PERLIN_WIDTH, PERLIN_HEIGHT, texDesc);
             gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, tex);
             gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); // invert vertical texcoord v
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR); // use linear filter for magnification
@@ -244,10 +288,11 @@ function loadModels() {
     /**
      * Generate triangles for terrain of size w x h
      * @param {Number} w 
-     * @param {Number} h 
+     * @param {Number} h
+     * @param {Number} preset - index of texture preset to use
      * @return {Array} - list of triangles
      */
-    function generateTerrain(w, h) {
+    function generateTerrain(w, h, preset) {
         let terrainTris = [];
 
         const triMat = {
@@ -297,17 +342,12 @@ function loadModels() {
             tri.material = currTriMat;
 
             let ht = (v1[2] + v2[2] + v3[2]) / 3;
-            let texture1_share = 0.4;
-            let texture2_share = 0.5;
-            console.assert(texture1_share + texture2_share <= 1.0);
-            let lim1 = TERRAIN_MIN_DEPTH + texture1_share * (TERRAIN_MAX_ELEVATION - TERRAIN_MIN_DEPTH);
-            let lim2 = TERRAIN_MIN_DEPTH + texture2_share * (TERRAIN_MAX_ELEVATION - TERRAIN_MIN_DEPTH);
-            if (ht < lim1) {
-                tri.material.texture = "grass";
-            } else if (ht < lim2) {
-                tri.material.texture = "rock";
-            } else {
-                tri.material.texture = "snow";
+            for (var tex = 0; tex < texturePresets[preset].layers; tex++) {
+                let lim = TERRAIN_MIN_DEPTH + texturePresets[preset].textures[tex].share * (TERRAIN_MAX_ELEVATION - TERRAIN_MIN_DEPTH);
+                if (ht < lim) {
+                    tri.material.texture = texturePresets[preset].textures[tex].name;
+                    break;
+                }
             }
 
             tri.vertices = [
@@ -412,6 +452,9 @@ function loadModels() {
         return terrainTris;
     }
 
+    if (!loadTexPresets()) {
+        console.log("Presets file not found or invalid");
+    }
     inputTriangles = generateTerrain(TERRAIN_WIDTH, TERRAIN_HEIGHT); // read in the triangle data
 
     var currSet; // the current triangle set

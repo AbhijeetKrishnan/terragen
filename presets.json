@@ -1,0 +1,39 @@
+[
+    {
+        "name": "landscape",
+        "layers": 3,
+        "textures": [
+            {
+                "name": "grass",
+                "base": [53, 94, 59],
+                "highlight": [19, 136, 8],
+                "share": 0.4,
+                "width": 256,
+                "height": 256
+            },
+            {
+                "name": "rock",
+                "base": [123, 63, 0],
+                "highlight": [210, 105, 30],
+                "share": 0.7,
+                "width": 256,
+                "height": 256
+            },
+            {
+                "name": "snow",
+                "base": [240, 234, 214],
+                "highlight": [255, 250, 250],
+                "share": 1.0,
+                "width": 256,
+                "height": 256
+            }
+        ],
+        "objTex": {
+            "name": "grass",
+            "base": [53, 94, 59],
+            "highlight": [19, 136, 8],
+            "width": 256,
+            "height": 256
+        }
+    }
+]
