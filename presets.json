@@ -35,7 +35,7 @@
             "width": 256,
             "height": 256
         },
-        "objCutoff": 0.7
+        "objCutoff": 0.3
     },
     {
         "name": "rainbow",
@@ -105,7 +105,7 @@
             "width": 256,
             "height": 256
         },
-        "objCutoff": 0.7
+        "objCutoff": 0.3
     },
     {
         "name": "volcano",
@@ -143,6 +143,6 @@
             "width": 256,
             "height": 256
         },
-        "objCutoff": 0.5
+        "objCutoff": 0.3
     }
 ]
