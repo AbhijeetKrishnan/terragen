@@ -7,7 +7,7 @@
                 "name": "grass",
                 "base": [53, 94, 59],
                 "highlight": [19, 136, 8],
-                "share": 0.4,
+                "share": 0.5,
                 "width": 256,
                 "height": 256
             },
