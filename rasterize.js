@@ -23,7 +23,7 @@ var uvBuffers = []; // uv coord lists by set, in duples
 var triangleBuffers = []; // indices into vertexBuffers by set, in triples
 var textures = {}; // texture imagery by set
 
-let texturePresets = [];
+let texturePresets;
 
 /* shader parameter locations */
 var vPosAttribLoc; // where to put position for vertex shader
@@ -227,6 +227,8 @@ function loadModels() {
         } catch (e) {
             console.log(e);
         }
+
+        return true;
     }
 
     /**
@@ -244,7 +246,7 @@ function loadModels() {
         var w = canvas.width;
         var h = canvas.height;
         baseColour = vec3.fromValues(texDesc.base[0], texDesc.base[1], texDesc.base[2]);
-        highlightColour = vec3.fromValues(texDesc.hightlight[0], texDesc.hightlight[1], texDesc.hightlight[2]);
+        highlightColour = vec3.fromValues(texDesc.highlight[0], texDesc.highlight[1], texDesc.highlight[2]);
         perlin = new Perlin(perlinWidth, perlinHeight); // could possible vary this as a ratio of world size
         for (var i = 0; i < h; i++) {
             for (var j = 0; j < w; j++) {
@@ -270,7 +272,7 @@ function loadModels() {
             gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); // invert vertical texcoord v, load gray 1x1
             let texDesc;
             for (let tex = 0; tex < texturePresets[TEX_PRESET].textures.length; tex++) {
-                if (texturePresets[TEX_PRESET].textures.name == textureName) {
+                if (texturePresets[TEX_PRESET].textures[tex].name == textureName) {
                     texDesc = texturePresets[TEX_PRESET].textures[tex];
                     break;
                 }
@@ -293,6 +295,10 @@ function loadModels() {
      * @return {Array} - list of triangles
      */
     function generateTerrain(w, h, preset) {
+        if (!loadTexPresets()) {
+            console.log("Presets file not found or invalid");
+        }
+
         let terrainTris = [];
 
         const triMat = {
@@ -452,10 +458,7 @@ function loadModels() {
         return terrainTris;
     }
 
-    if (!loadTexPresets()) {
-        console.log("Presets file not found or invalid");
-    }
-    inputTriangles = generateTerrain(TERRAIN_WIDTH, TERRAIN_HEIGHT); // read in the triangle data
+    inputTriangles = generateTerrain(TERRAIN_WIDTH, TERRAIN_HEIGHT, TEX_PRESET); // read in the triangle data
 
     var currSet; // the current triangle set
     var whichSetVert; // index of vertex in current triangle set
