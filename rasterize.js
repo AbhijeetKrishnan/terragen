@@ -379,6 +379,8 @@ function loadModels() {
 
         function generateObject(x, y, z, preset) {
             /* define model */
+            x += transformRange(Math.random(), TRI_STEP_SIZE / 10, TRI_STEP_SIZE, 0, 1);
+            y += transformRange(Math.random(), TRI_STEP_SIZE / 10, TRI_STEP_SIZE, 0, 1);
             let v1 = vec3.fromValues(x - 0.1, y - 0.1, z);
             let v2 = vec3.fromValues(x - 0.1, y + 0.1, z);
             let v3 = vec3.fromValues(x + 0.1, y + 0.1, z);
