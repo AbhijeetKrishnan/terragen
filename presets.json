@@ -5,8 +5,8 @@
         "textures": [
             {
                 "name": "grass",
-                "base": [53, 94, 59],
-                "highlight": [19, 136, 8],
+                "base": [173, 255, 47],
+                "highlight": [107, 142, 35],
                 "share": 0.3,
                 "width": 256,
                 "height": 256
@@ -30,8 +30,8 @@
         ],
         "objTex": {
             "name": "tree",
-            "base": [173, 255, 47],
-            "highlight": [107, 142, 35],
+            "base": [53, 94, 59],
+            "highlight": [19, 136, 8],
             "width": 256,
             "height": 256
         },
