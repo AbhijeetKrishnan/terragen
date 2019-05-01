@@ -452,7 +452,8 @@ function loadModels() {
                                 n = brTri.normals[0];
                             }
                             h = v[2] - ((l - v[0]) * n[0] + (k - v[1]) * n[1]) / n[2];
-                            terrainTris.push(generateObject(l, k, h, preset));
+                            if (h < TERRAIN_MIN_DEPTH + texturePresets[preset].objCutoff * (TERRAIN_MAX_ELEVATION - TERRAIN_MIN_DEPTH))
+                                terrainTris.push(generateObject(l, k, h, preset));
                         }
                     }
                 }
