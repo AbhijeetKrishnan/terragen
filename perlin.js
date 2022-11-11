@@ -5,10 +5,11 @@
 class Perlin {
     /**
      * Creates Perlin object with grid size (ixmax x iymax)
-     * Coordinates in Perlin grid-space are in [0, ixmax - 1] and [0. iymax - 1]
+     * Coordinates in Perlin grid-space are in [0, ixmax - 1] and [0, iymax - 1]
      * @param {Number} ixmax 
-     * @param {Number} iymax 
+     * @param {Number} iymax
      */
+
     constructor(ixmax, iymax) {
         // size of Perlin grid
         this.IXMAX = ixmax;
@@ -33,7 +34,6 @@ class Perlin {
      */
     setSeed(seed) {
         this.rng = new Math.seedrandom(seed);
-        this.computeGradient();
     }
 
     /**
@@ -42,7 +42,7 @@ class Perlin {
     computeGradient() {
         for (var y = 0; y < this.IYMAX; y++) {
             for (var x = 0; x < this.IXMAX; x++) {
-                // transform to [-1, 1]
+                // random vector in unit square
                 this.Gradient[y][x] = vec2.fromValues(2 * this.rng() - 1, 2 * this.rng() - 1);
 
                 // Normalize the vector
@@ -50,6 +50,7 @@ class Perlin {
             }
         }
     }
+
     /**
      * Function to linearly interpolate between a0 and a1
      * Weight w should be in the range [0.0, 1.0]
@@ -122,23 +123,23 @@ class Perlin {
             y0 -= 1;
         var y1 = y0 + 1;
 
-        console.assert(0 <= x0 && x0 < this.IXMAX, "x0 = " + x0);
-        console.assert(0 <= x1 && x1 < this.IXMAX, "x1 = " + x1);
+        // console.assert(0 <= x0 && x0 < this.IXMAX, "x0 = " + x0);
+        // console.assert(0 <= x1 && x1 < this.IXMAX, "x1 = " + x1);
 
-        console.assert(0 <= y0 && y0 < this.IYMAX, "y0 = " + y0);
-        console.assert(0 <= y1 && y1 < this.IYMAX, "y1 = " + y1);
+        // console.assert(0 <= y0 && y0 < this.IYMAX, "y0 = " + y0);
+        // console.assert(0 <= y1 && y1 < this.IYMAX, "y1 = " + y1);
 
         // Determine interpolation weights
         var sx = Perlin.fade(v[0] - x0);
-        console.assert(sx >= 0.0 && sx <= 1.0, {
-            "message": "sx is not in [0, 1]",
-            "sx": sx
-        });
+        // console.assert(sx >= 0.0 && sx <= 1.0, {
+        //     "message": "sx is not in [0, 1]",
+        //     "sx": sx
+        // });
         var sy = Perlin.fade(v[1] - y0);
-        console.assert(sy >= 0.0 && sy <= 1.0, {
-            "message": "sy is not in [0, 1]",
-            "sy": sy
-        });
+        // console.assert(sy >= 0.0 && sy <= 1.0, {
+        //     "message": "sy is not in [0, 1]",
+        //     "sy": sy
+        // });
 
         // Interpolate between grid point gradients
         var n0, n1, ix0, ix1, value;
@@ -150,7 +151,7 @@ class Perlin {
         ix1 = Perlin.lerp(n0, n1, sx);
         value = Perlin.lerp(ix0, ix1, sy);
 
-        console.assert(value >= -1.0 && value <= 1.0, "Value in incorrect range " + value);
+        // console.assert(value >= -1.0 && value <= 1.0, "Value in incorrect range " + value);
         return value;
     }
 }
