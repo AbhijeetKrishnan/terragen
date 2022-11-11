@@ -46,19 +46,19 @@ var viewDelta = 0.1; // how much to displace view with each key press
 var rotateTheta = Math.PI / 10; // how much to rotate models by with each key press
 
 /* Terrain generation globals */
-let TERRAIN_WIDTH = 64;
-let TERRAIN_HEIGHT = 64;
+let TERRAIN_WIDTH = 16;
+let TERRAIN_HEIGHT = 16;
 let TERRAIN_MIN_DEPTH = 0;
-let TERRAIN_MAX_ELEVATION = 32;
+let TERRAIN_MAX_ELEVATION = 16;
 
 let PERLIN_WIDTH = 16;
 let PERLIN_HEIGHT = 16;
 
-let TEX_WIDTH = 256;
-let TEX_HEIGHT = 256;
+let TEX_WIDTH = 16;
+let TEX_HEIGHT = 16;
 let TEX_PRESET = 0; // index of texture preset
 
-let TRI_STEP_SIZE = 0.5;
+let TRI_STEP_SIZE = 1;
 let OBJ_STEP_SIZE = 0.8; // ought to be < 1
 
 // ASSIGNMENT HELPER FUNCTIONS
@@ -204,7 +204,7 @@ function transformRange(origVal, newMin, newMax, oldMin = -1, oldMax = 1) {
 function loadModels() {
 
     function loadTexPresets() {
-        INPUT_URL = "https://raw.githubusercontent.com/MystikNinja/terragen/master/presets.json";
+        INPUT_URL = "https://raw.githubusercontent.com/AbhijeetKrishnan/terragen/master/presets.json";
         texturePresets = getJSONFile(INPUT_URL, "presets");
 
         // validate
@@ -243,6 +243,7 @@ function loadModels() {
         canvas.width = texDesc.width;
         canvas.height = texDesc.height;
         var ctx = canvas.getContext('2d');
+        return canvas;
         var w = canvas.width;
         var h = canvas.height;
         baseColour = vec3.fromValues(texDesc.base[0], texDesc.base[1], texDesc.base[2]);
