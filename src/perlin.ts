@@ -2,27 +2,34 @@
  * Class to generate 2-D Perlin noise 
  */
 
-class Perlin {
+const seedrandom = require('seedrandom');
+import { vec2 } from 'gl-matrix';
+
+export class Perlin {
+    IXMAX: number;
+    IYMAX: number;
+    rng: any;
+    Gradient: vec2[][];
+
     /**
      * Creates Perlin object with grid size (ixmax x iymax)
      * Coordinates in Perlin grid-space are in [0, ixmax - 1] and [0. iymax - 1]
      * @param {Number} ixmax 
      * @param {Number} iymax 
      */
-    constructor(ixmax, iymax) {
+    constructor(ixmax: number, iymax: number) {
         // size of Perlin grid
         this.IXMAX = ixmax;
         this.IYMAX = iymax;
-        this.rng = new Math.seedrandom();
-        this.Gradient = []; // Precomputed (or otherwise) gradient vectors at each grid node
+        this.rng = seedrandom();
+        this.Gradient = new Array<Array<vec2>>(); // Precomputed (or otherwise) gradient vectors at each grid node
 
-        for (var y = 0; y < this.IYMAX; y++) {
-            this.Gradient.push([])
-        }
-        for (var y = 0; y < this.IYMAX; y++) {
-            for (var x = 0; x < this.IXMAX; x++) {
-                this.Gradient[y].push(vec2.fromValues(0, 0));
+        for (let y = 0; y < this.IYMAX; y++) {
+            let row: vec2[] = new Array<vec2>();
+            for (let x = 0; x < this.IXMAX; x++) {
+                row.push(vec2.fromValues(0, 0));
             }
+            this.Gradient.push(row);
         }
         this.computeGradient();
     }
@@ -31,8 +38,8 @@ class Perlin {
      * Sets seed for Perlin noise generation and computes corresponding gradient
      * @param {String} seed 
      */
-    setSeed(seed) {
-        this.rng = new Math.seedrandom(seed);
+    setSeed(seed: string) {
+        this.rng = seedrandom(seed);
         this.computeGradient();
     }
 
@@ -40,13 +47,14 @@ class Perlin {
      * Populates Gradient with random 2-D vectors
      */
     computeGradient() {
-        for (var y = 0; y < this.IYMAX; y++) {
-            for (var x = 0; x < this.IXMAX; x++) {
+        for (let y = 0; y < this.IYMAX; y++) {
+            let row: vec2[] = this.Gradient[y]!;
+            for (let x = 0; x < this.IXMAX; x++) {
                 // transform to [-1, 1]
-                this.Gradient[y][x] = vec2.fromValues(2 * this.rng() - 1, 2 * this.rng() - 1);
+                row[x] = vec2.fromValues(2 * this.rng() - 1, 2 * this.rng() - 1);
 
                 // Normalize the vector
-                vec2.normalize(this.Gradient[y][x], this.Gradient[y][x]);
+                vec2.normalize(row[x]!, row[x]!);
             }
         }
     }
@@ -58,7 +66,7 @@ class Perlin {
      * @param {Number} w
      * @return {Number}
      */
-    static lerp(a0, a1, w) {
+    static lerp(a0: number, a1: number, w: number): number {
         return a0 + w * (a1 - a0);
     }
 
@@ -72,7 +80,7 @@ class Perlin {
      * @param {Number} t
      * @return {Number}
      */
-    static fade(t) {
+    static fade(t: number): number {
         return t * t * t * (t * (t * 6 - 15) + 10); // 6t^5 - 15t^4 + 10t^3
     }
 
@@ -82,17 +90,13 @@ class Perlin {
      * @param {vec2} cellCoord - Coordinates of a cell corner where coord lives in Perlin grid space
      * @return {Number}
      */
-    dotGridGradient(coord, cellCoord) {
-        try {
-            // Compute the distance vector
-            var d = vec2.create();
-            vec2.subtract(d, coord, cellCoord);
+    dotGridGradient(coord: vec2, cellCoord: vec2): number {
+        // Compute the distance vector
+        let d = vec2.create();
+        vec2.subtract(d, coord, cellCoord);
 
-            // Compute the dot-product
-            return vec2.dot(d, this.Gradient[cellCoord[1]][cellCoord[0]]);
-        } catch (e) {
-            console.log(e);
-        }
+        // Compute the dot-product
+        return vec2.dot(d, this.Gradient[cellCoord[1]]![cellCoord[0]]!);
     }
 
     /**
@@ -103,24 +107,24 @@ class Perlin {
      * @param {Number} height - height of world grid
      * @return {Number} - in range [-1, 1]
      */
-    getNoise(vect, width, height) {
+    getNoise(vect: vec2, width: number, height: number): number {
 
         // Transform world coordinates to Perlin grid coordinates
-        var oldRatio = vec2.fromValues(width, height);
-        var newRatio = vec2.fromValues(this.IXMAX - 1, this.IYMAX - 1);
-        var v = vec2.clone(vect);
+        let oldRatio = vec2.fromValues(width, height);
+        let newRatio = vec2.fromValues(this.IXMAX - 1, this.IYMAX - 1);
+        let v = vec2.clone(vect);
         vec2.multiply(v, v, newRatio);
         vec2.divide(v, v, oldRatio);
 
         // Determine grid cell coordinates
-        var x0 = Math.floor(v[0]);
+        let x0 = Math.floor(v[0]);
         if (x0 + 1 == this.IXMAX) // in case of point on right edge
             x0 -= 1;
-        var x1 = x0 + 1;
-        var y0 = Math.floor(v[1]);
+        let x1 = x0 + 1;
+        let y0 = Math.floor(v[1]);
         if (y0 + 1 == this.IYMAX) // in case of point on bottom edge
             y0 -= 1;
-        var y1 = y0 + 1;
+        let y1 = y0 + 1;
 
         console.assert(0 <= x0 && x0 < this.IXMAX, "x0 = " + x0);
         console.assert(0 <= x1 && x1 < this.IXMAX, "x1 = " + x1);
@@ -129,19 +133,19 @@ class Perlin {
         console.assert(0 <= y1 && y1 < this.IYMAX, "y1 = " + y1);
 
         // Determine interpolation weights
-        var sx = Perlin.fade(v[0] - x0);
+        let sx = Perlin.fade(v[0] - x0);
         console.assert(sx >= 0.0 && sx <= 1.0, {
             "message": "sx is not in [0, 1]",
             "sx": sx
         });
-        var sy = Perlin.fade(v[1] - y0);
+        let sy = Perlin.fade(v[1] - y0);
         console.assert(sy >= 0.0 && sy <= 1.0, {
             "message": "sy is not in [0, 1]",
             "sy": sy
         });
 
         // Interpolate between grid point gradients
-        var n0, n1, ix0, ix1, value;
+        let n0, n1, ix0, ix1, value;
         n0 = this.dotGridGradient(v, vec2.fromValues(x0, y0));
         n1 = this.dotGridGradient(v, vec2.fromValues(x1, y0));
         ix0 = Perlin.lerp(n0, n1, sx);

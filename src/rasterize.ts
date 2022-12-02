@@ -1,103 +1,96 @@
+import { vec2, vec3, mat4, ReadonlyVec3, ReadonlyVec2 } from 'gl-matrix';
+
+import { Perlin } from './perlin';
+
 /* GLOBAL CONSTANTS AND VARIABLES */
 
 /* assignment specific globals */
-var defaultEye = vec3.fromValues(-1.810965657234192, 36.399932861328125, 40.831521987915039); // default eye position in world space
-var defaultCenter = vec3.fromValues(62.18913650512695, 36.399932861328125, -9.168441772460938); // default view direction in world space
-var defaultUp = vec3.fromValues(0.30000001192092896, 0, 1); // default view up vector
+let defaultEye: vec3 = vec3.fromValues(-1.810965657234192, 36.399932861328125, 40.831521987915039); // default eye position in world space
+let defaultCenter = vec3.fromValues(62.18913650512695, 36.399932861328125, -9.168441772460938); // default view direction in world space
+let defaultUp = vec3.fromValues(0.30000001192092896, 0, 1); // default view up vector
 
-var lightAmbient = vec3.fromValues(1, 1, 1); // default light ambient emission
-var lightDiffuse = vec3.fromValues(1, 1, 1); // default light diffuse emission
-var lightSpecular = vec3.fromValues(1, 1, 1); // default light specular emission
-var lightPosition = vec3.fromValues(-1.810965657234192, 36.399932861328125, 40.831521987915039); // default light position
+let lightAmbient = vec3.fromValues(1, 1, 1); // default light ambient emission
+let lightDiffuse = vec3.fromValues(1, 1, 1); // default light diffuse emission
+let lightSpecular = vec3.fromValues(1, 1, 1); // default light specular emission
+let lightPosition = vec3.fromValues(-1.810965657234192, 36.399932861328125, 40.831521987915039); // default light position
 
 /* input model data */
-var gl = null; // the all powerful gl object. It's all here folks!
-var inputTriangles = []; // the triangle data as loaded from input files
-var numTriangleSets = 0; // how many triangle sets in input scene
-var triSetSizes = []; // this contains the size of each triangle set
+let gl: WebGLRenderingContext; // the all powerful gl object. It's all here folks!
+let inputTriangles = []; // the triangle data as loaded from input files
+let numTriangleSets = 0; // how many triangle sets in input scene
+let triSetSizes = []; // this contains the size of each triangle set
 
 /* model data prepared for webgl */
-var vertexBuffers = []; // vertex coordinate lists by set, in triples
-var normalBuffers = []; // normal component lists by set, in triples
-var uvBuffers = []; // uv coord lists by set, in duples
-var triangleBuffers = []; // indices into vertexBuffers by set, in triples
-var textures = {}; // texture imagery by set
+let vertexBuffers = []; // vertex coordinate lists by set, in triples
+let normalBuffers = []; // normal component lists by set, in triples
+let uvBuffers = []; // uv coord lists by set, in duples
+let triangleBuffers = []; // indices into vertexBuffers by set, in triples
+let textures: { [key: string]: WebGLTexture } = {}; // texture imagery by set
 
 let texturePresets;
 
 /* shader parameter locations */
-var vPosAttribLoc; // where to put position for vertex shader
-var vNormAttribLoc; // where to put normal for vertex shader
-var vUVAttribLoc; // where to put UV for vertex shader
-var mMatrixULoc; // where to put model matrix for vertex shader
-var pvmMatrixULoc; // where to put project model view matrix for vertex shader
-var ambientULoc; // where to put ambient reflecivity for fragment shader
-var diffuseULoc; // where to put diffuse reflecivity for fragment shader
-var specularULoc; // where to put specular reflecivity for fragment shader
-var shininessULoc; // where to put specular exponent for fragment shader
-var usingTextureULoc; // where to put using texture boolean for fragment shader
-var textureULoc; // where to put texture for fragment shader
+let vPosAttribLoc; // where to put position for vertex shader
+let vNormAttribLoc; // where to put normal for vertex shader
+let vUVAttribLoc; // where to put UV for vertex shader
+let mMatrixULoc; // where to put model matrix for vertex shader
+let pvmMatrixULoc; // where to put project model view matrix for vertex shader
+let ambientULoc; // where to put ambient reflecivity for fragment shader
+let diffuseULoc; // where to put diffuse reflecivity for fragment shader
+let specularULoc; // where to put specular reflecivity for fragment shader
+let shininessULoc; // where to put specular exponent for fragment shader
+let usingTextureULoc; // where to put using texture boolean for fragment shader
+let textureULoc; // where to put texture for fragment shader
 
 /* interaction variables */
-var Eye = vec3.clone(defaultEye); // eye position in world space
-var Center = vec3.clone(defaultCenter); // view direction in world space
-var Up = vec3.clone(defaultUp); // view up vector in world space
-var viewDelta = 0.1; // how much to displace view with each key press
-var rotateTheta = Math.PI / 10; // how much to rotate models by with each key press
+let Eye = vec3.clone(defaultEye); // eye position in world space
+let Center = vec3.clone(defaultCenter); // view direction in world space
+let Up = vec3.clone(defaultUp); // view up vector in world space
+let viewDelta = 0.1; // how much to displace view with each key press
+let rotateTheta = Math.PI / 10; // how much to rotate models by with each key press
 
 /* Terrain generation globals */
-let TERRAIN_WIDTH = 64;
-let TERRAIN_HEIGHT = 64;
-let TERRAIN_MIN_DEPTH = 0;
-let TERRAIN_MAX_ELEVATION = 32;
+const TERRAIN_WIDTH = 64;
+const TERRAIN_HEIGHT = 64;
+const TERRAIN_MIN_DEPTH = 0;
+const TERRAIN_MAX_ELEVATION = 32;
 
-let PERLIN_WIDTH = 16;
-let PERLIN_HEIGHT = 16;
+const PERLIN_WIDTH = 16;
+const PERLIN_HEIGHT = 16;
 
-let TEX_WIDTH = 256;
-let TEX_HEIGHT = 256;
-let TEX_PRESET = 0; // index of texture preset
+const TEX_WIDTH = 256;
+const TEX_HEIGHT = 256;
+const TEX_PRESET = 0; // index of texture preset
 
-let TRI_STEP_SIZE = 0.5;
-let OBJ_STEP_SIZE = 0.8; // ought to be < 1
+const TRI_STEP_SIZE = 0.5;
+const OBJ_STEP_SIZE = 0.8; // ought to be < 1
 
 // ASSIGNMENT HELPER FUNCTIONS
 
 // get the JSON file from the passed URL
-function getJSONFile(url, descr) {
-    try {
-        if ((typeof(url) !== "string") || (typeof(descr) !== "string"))
-            throw "getJSONFile: parameter not a string";
-        else {
-            var httpReq = new XMLHttpRequest(); // a new http request
-            httpReq.open("GET",url,false); // init the request
-            httpReq.send(null); // send the request
-            var startTime = Date.now();
-            while ((httpReq.status !== 200) && (httpReq.readyState !== XMLHttpRequest.DONE)) {
-                if ((Date.now()-startTime) > 3000)
-                    break;
-            } // until its loaded or we time out after three seconds
-            if ((httpReq.status !== 200) || (httpReq.readyState !== XMLHttpRequest.DONE))
-                throw "Unable to open " + descr + " file!";
-            else
-                return JSON.parse(httpReq.response); 
-        } // end if good params
-    } // end try    
-    
-    catch(e) {
-        console.log(e);
-        return(String.null);
-    }
+function getJSONFile(url: string, descr: string) {
+    let httpReq = new XMLHttpRequest(); // a new http request
+    httpReq.open("GET",url,false); // init the request
+    httpReq.send(null); // send the request
+    let startTime = Date.now();
+    while ((httpReq.status !== 200) && (httpReq.readyState !== XMLHttpRequest.DONE)) {
+        if ((Date.now()-startTime) > 3000)
+            break;
+    } // until its loaded or we time out after three seconds
+    if ((httpReq.status !== 200) || (httpReq.readyState !== XMLHttpRequest.DONE))
+        throw "Unable to open " + descr + " file!";
+    else
+        return JSON.parse(httpReq.response);
 }
 
 /**
  * Function to handle keypresses
- * @param {Object} event 
+ * @param {KeyBoardEvent} event 
  */
-function handleKeyDown(event) {
+function handleKeyDown(event: KeyboardEvent) {
 
     // set up needed view params
-    var lookAt = vec3.create(),
+    let lookAt = vec3.create(),
         viewRight = vec3.create(),
         temp = vec3.create(); // lookat, right & temp vectors
     lookAt = vec3.normalize(lookAt, vec3.subtract(temp, Center, Eye)); // get lookat vector
@@ -168,12 +161,13 @@ function setupWebGL() {
     document.onkeydown = handleKeyDown; // call this when key pressed
 
     // create a webgl canvas and set it up
-    let webGLCanvas = document.getElementById("display"); // create a webgl canvas
-    gl = webGLCanvas.getContext("webgl"); // get a webgl object from it
+    let webGLCanvas = <HTMLCanvasElement>document.getElementById("display"); // create a webgl canvas
+    let tryGL = webGLCanvas.getContext("webgl"); // get a webgl object from it
     try {
-        if (gl == null) {
+        if (tryGL == null) {
             throw "unable to create gl context -- is your browser gl ready?";
         } else {
+            gl = tryGL;
             gl.clearColor(0.0, 0.0, 0.0, 1.0); // use black when we clear the frame buffer
             gl.clearDepth(1.0); // use max when we clear the depth buffer
             gl.enable(gl.DEPTH_TEST); // use hidden surface removal (with zbuffering)
@@ -194,7 +188,7 @@ function setupWebGL() {
  * @param {Number} oldMax
  * @return {Number} 
  */
-function transformRange(origVal, newMin, newMax, oldMin = -1, oldMax = 1) {
+function transformRange(origVal: number, newMin: number, newMax: number, oldMin: number = -1, oldMax: number = 1): number {
     return (origVal - oldMin) * (newMax - newMin) / (oldMax - oldMin) + newMin;
 }
 
@@ -203,8 +197,8 @@ function transformRange(origVal, newMin, newMax, oldMin = -1, oldMax = 1) {
  */
 function loadModels() {
 
-    function loadTexPresets() {
-        INPUT_URL = "https://raw.githubusercontent.com/MystikNinja/terragen/master/presets.json";
+    function loadTexPresets(): boolean {
+        const INPUT_URL = "https://raw.githubusercontent.com/AbhijeetKrishnan/terragen/master/presets.json";
         texturePresets = getJSONFile(INPUT_URL, "presets");
 
         // validate
@@ -238,20 +232,20 @@ function loadModels() {
      * @param {Object} texDesc description of texture to be generated
      * @return {HTMLCanvasElement} 
      */
-    function generateTexture(perlinWidth, perlinHeight, texDesc) {
-        var canvas = document.createElement('canvas'); // Ref: https://stackoverflow.com/questions/3892010/create-2d-context-without-canvas
+    function generateTexture(perlinWidth: number, perlinHeight: number, texDesc: object): HTMLCanvasElement {
+        let canvas = document.createElement('canvas'); // Ref: https://stackoverflow.com/questions/3892010/create-2d-context-without-canvas
         canvas.width = texDesc.width;
         canvas.height = texDesc.height;
-        var ctx = canvas.getContext('2d');
-        var w = canvas.width;
-        var h = canvas.height;
-        baseColour = vec3.fromValues(texDesc.base[0], texDesc.base[1], texDesc.base[2]);
-        highlightColour = vec3.fromValues(texDesc.highlight[0], texDesc.highlight[1], texDesc.highlight[2]);
-        perlin = new Perlin(perlinWidth, perlinHeight); // could possible vary this as a ratio of world size
-        for (var i = 0; i < h; i++) {
-            for (var j = 0; j < w; j++) {
-                var noise = perlin.getNoise(vec2.fromValues(j + 0.5, i + 0.5), w, h) / 2 + 0.5; // experiment without 0.5
-                var rgb = vec3.create();
+        let ctx = canvas.getContext('2d');
+        let w = canvas.width;
+        let h = canvas.height;
+        let baseColour = vec3.fromValues(texDesc.base[0], texDesc.base[1], texDesc.base[2]);
+        let highlightColour = vec3.fromValues(texDesc.highlight[0], texDesc.highlight[1], texDesc.highlight[2]);
+        let perlin = new Perlin(perlinWidth, perlinHeight); // could possible vary this as a ratio of world size
+        for (let i = 0; i < h; i++) {
+            for (let j = 0; j < w; j++) {
+                let noise = perlin.getNoise(vec2.fromValues(j + 0.5, i + 0.5), w, h) / 2 + 0.5; // experiment without 0.5
+                let rgb = vec3.create();
                 vec3.lerp(rgb, baseColour, highlightColour, noise);
                 ctx.fillStyle = "rgb(" + rgb[0] + "," + rgb[1] + "," + rgb[2] + ")";
                 ctx.fillRect(j, i, 1, 1);
@@ -264,10 +258,10 @@ function loadModels() {
      * load a texture
      * @param {string} textureName 
      */
-    function loadTexture(textureName) {
+    function loadTexture(textureName: string) {
         if (textureName && !(textureName in textures)) {
-            textures[textureName] = gl.createTexture(); // new texture struct for model
-            let currTexture = textures[textureName]; // shorthand
+            textures[textureName] = gl.createTexture()!; // new texture struct for model
+            let currTexture = textures[textureName]!; // shorthand
             gl.bindTexture(gl.TEXTURE_2D, currTexture); // activate model's texture
             gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); // invert vertical texcoord v,
             let texDesc;
@@ -297,13 +291,14 @@ function loadModels() {
      * @param {Number} preset - index of texture preset to use
      * @return {Array} - list of triangles
      */
-    function generateTerrain(w, h, preset) {
+    function generateTerrain(w: number, h: number, preset: number) {
         if (!loadTexPresets()) {
             console.log("Presets file not found or invalid");
         }
 
         let terrainTris = [];
 
+        // TODO: refactor this as a class, and the const object as a default constructor
         const triMat = {
             ambient: [0.1, 0.1, 0.1],
             diffuse: [0.8, 0.8, 0.8],
@@ -329,7 +324,7 @@ function loadModels() {
         let noise = new Perlin(PERLIN_WIDTH, PERLIN_HEIGHT);
         let objNoise = new Perlin(PERLIN_WIDTH, PERLIN_HEIGHT);
 
-        function getNormal(v1, v2, v3) {
+        function getNormal(v1: ReadonlyVec3, v2: ReadonlyVec3, v3: ReadonlyVec3): vec3 {
             let v2_v1 = vec3.create();
             vec3.subtract(v2_v1, v2, v1);
             let v3_v1 = vec3.create();
@@ -340,8 +335,8 @@ function loadModels() {
             return n;
         }
 
-        function generateTri(p1, p2, p3, preset) {
-            function getHeightFactor(p) {
+        function generateTri(p1: vec2, p2: vec2, p3: vec2, preset: number) {
+            function getHeightFactor(p: ReadonlyVec2) {
                 let retVal = (p[0] + p[1]) / (TERRAIN_WIDTH + TERRAIN_HEIGHT);
                 retVal = retVal * retVal;
                 return retVal;
@@ -356,7 +351,7 @@ function loadModels() {
             tri.material = currTriMat;
 
             let ht = (v1[2] + v2[2] + v3[2]) / 3;
-            for (var tex = 0; tex < texturePresets[preset].layers; tex++) {
+            for (let tex = 0; tex < texturePresets[preset].layers; tex++) {
                 let lim = TERRAIN_MIN_DEPTH + texturePresets[preset].textures[tex].share * (TERRAIN_MAX_ELEVATION - TERRAIN_MIN_DEPTH);
                 if (ht < lim) {
                     tri.material.texture = texturePresets[preset].textures[tex].name;
@@ -377,7 +372,7 @@ function loadModels() {
             return tri;
         }
 
-        function generateObject(x, y, z, preset) {
+        function generateObject(x: number, y: number, z: number, preset: number) {
             /* define model */
             let v1 = vec3.fromValues(x - 0.1, y - 0.1, z);
             let v2 = vec3.fromValues(x - 0.1, y + 0.1, z);
@@ -443,15 +438,15 @@ function loadModels() {
                 // generating objects
                 for (let k = i; k < i + TRI_STEP_SIZE; k += OBJ_STEP_SIZE) {
                     for (let l = j; l < j + TRI_STEP_SIZE; l += OBJ_STEP_SIZE) {
-                        objProbability = transformRange(objNoise.getNoise(vec2.fromValues(l, k), w, h), 0, 1);
-                        draw = Math.random();
+                        let objProbability = transformRange(objNoise.getNoise(vec2.fromValues(l, k), w, h), 0, 1);
+                        let draw = Math.random();
                         if (draw < objProbability) {
                             // place object at (k, l, h);
                             let x = l;
                             let y = k;
                             x += transformRange(Math.random(), TRI_STEP_SIZE / 10, TRI_STEP_SIZE, 0, 1);
                             y += transformRange(Math.random(), TRI_STEP_SIZE / 10, TRI_STEP_SIZE, 0, 1);
-                            let v, n, h;
+                            let v: vec3, n: vec3, h: number;
                             if (x + y - (i + j) <= 1.0) {
                                 v = tlTri.vertices[0];
                                 n = tlTri.normals[0];
@@ -473,19 +468,19 @@ function loadModels() {
 
     inputTriangles = generateTerrain(TERRAIN_WIDTH, TERRAIN_HEIGHT, TEX_PRESET); // read in the triangle data
 
-    var currSet; // the current triangle set
-    var whichSetVert; // index of vertex in current triangle set
-    var whichSetTri; // index of triangle in current triangle set
-    var vtxToAdd; // vtx coords to add to the vertices array
-    var normToAdd; // vtx normal to add to the normal array
-    var uvToAdd; // uv coords to add to the uv arry
-    var triToAdd; // tri indices to add to the index array
-    var maxCorner = vec3.fromValues(Number.MIN_VALUE, Number.MIN_VALUE, Number.MIN_VALUE); // bbox corner
-    var minCorner = vec3.fromValues(Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE); // other corner
+    let currSet; // the current triangle set
+    let whichSetVert; // index of vertex in current triangle set
+    let whichSetTri; // index of triangle in current triangle set
+    let vtxToAdd; // vtx coords to add to the vertices array
+    let normToAdd; // vtx normal to add to the normal array
+    let uvToAdd; // uv coords to add to the uv arry
+    let triToAdd; // tri indices to add to the index array
+    let maxCorner = vec3.fromValues(Number.MIN_VALUE, Number.MIN_VALUE, Number.MIN_VALUE); // bbox corner
+    let minCorner = vec3.fromValues(Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE); // other corner
 
     // process each triangle set to load webgl vertex and triangle buffers
     numTriangleSets = inputTriangles.length; // remember how many tri sets
-    for (var whichSet = 0; whichSet < numTriangleSets; whichSet++) { // for each tri set
+    for (let whichSet = 0; whichSet < numTriangleSets; whichSet++) { // for each tri set
         currSet = inputTriangles[whichSet];
 
         // set up hilighting, modeling translation and rotation
@@ -499,7 +494,7 @@ function loadModels() {
         currSet.glVertices = []; // flat coord list for webgl
         currSet.glNormals = []; // flat normal list for webgl
         currSet.glUvs = []; // flat texture coord list for webgl
-        var numVerts = currSet.vertices.length; // num vertices in tri set
+        let numVerts = currSet.vertices.length; // num vertices in tri set
         for (whichSetVert = 0; whichSetVert < numVerts; whichSetVert++) { // verts in set
             vtxToAdd = currSet.vertices[whichSetVert]; // get vertex to add
             normToAdd = currSet.normals[whichSetVert]; // get normal to add
@@ -547,7 +542,7 @@ function loadModels() {
 function setupShaders() {
 
     // define vertex shader in essl using es6 template strings
-    var vShaderCode = `
+    let vShaderCode = `
         attribute vec3 aVertexPosition; // vertex position
         attribute vec3 aVertexNormal; // vertex normal
         attribute vec2 aVertexUV; // vertex texture uv
@@ -576,7 +571,7 @@ function setupShaders() {
     `;
 
     // define fragment shader in essl using es6 template strings
-    var fShaderCode = `
+    let fShaderCode = `
         precision mediump float; // set float to medium precision
 
         // eye location
@@ -635,22 +630,22 @@ function setupShaders() {
     `;
 
     try {
-        var fShader = gl.createShader(gl.FRAGMENT_SHADER); // create frag shader
+        let fShader = gl.createShader(gl.FRAGMENT_SHADER)!; // create frag shader
         gl.shaderSource(fShader, fShaderCode); // attach code to shader
         gl.compileShader(fShader); // compile the code for gpu execution
 
-        var vShader = gl.createShader(gl.VERTEX_SHADER); // create vertex shader
+        let vShader = gl.createShader(gl.VERTEX_SHADER)!; // create vertex shader
         gl.shaderSource(vShader, vShaderCode); // attach code to shader
         gl.compileShader(vShader); // compile the code for gpu execution
 
         if (!gl.getShaderParameter(fShader, gl.COMPILE_STATUS)) { // bad frag shader compile
-            throw "error during fragment shader compile: " + gl.getShaderInfoLog(fShader);
             gl.deleteShader(fShader);
+            throw "error during fragment shader compile: " + gl.getShaderInfoLog(fShader);
         } else if (!gl.getShaderParameter(vShader, gl.COMPILE_STATUS)) { // bad vertex shader compile
-            throw "error during vertex shader compile: " + gl.getShaderInfoLog(vShader);
             gl.deleteShader(vShader);
+            throw "error during vertex shader compile: " + gl.getShaderInfoLog(vShader);
         } else { // no compile errors
-            var shaderProgram = gl.createProgram(); // create the single shader program
+            let shaderProgram = gl.createProgram()!; // create the single shader program
             gl.attachShader(shaderProgram, fShader); // put frag shader in program
             gl.attachShader(shaderProgram, vShader); // put vertex shader in program
             gl.linkProgram(shaderProgram); // link program into gl context
@@ -673,11 +668,11 @@ function setupShaders() {
                 pvmMatrixULoc = gl.getUniformLocation(shaderProgram, "upvmMatrix"); // ptr to pvmmat
 
                 // locate fragment uniforms
-                var eyePositionULoc = gl.getUniformLocation(shaderProgram, "uEyePosition"); // ptr to eye position
-                var lightAmbientULoc = gl.getUniformLocation(shaderProgram, "uLightAmbient"); // ptr to light ambient
-                var lightDiffuseULoc = gl.getUniformLocation(shaderProgram, "uLightDiffuse"); // ptr to light diffuse
-                var lightSpecularULoc = gl.getUniformLocation(shaderProgram, "uLightSpecular"); // ptr to light specular
-                var lightPositionULoc = gl.getUniformLocation(shaderProgram, "uLightPosition"); // ptr to light position
+                let eyePositionULoc = gl.getUniformLocation(shaderProgram, "uEyePosition"); // ptr to eye position
+                let lightAmbientULoc = gl.getUniformLocation(shaderProgram, "uLightAmbient"); // ptr to light ambient
+                let lightDiffuseULoc = gl.getUniformLocation(shaderProgram, "uLightDiffuse"); // ptr to light diffuse
+                let lightSpecularULoc = gl.getUniformLocation(shaderProgram, "uLightSpecular"); // ptr to light specular
+                let lightPositionULoc = gl.getUniformLocation(shaderProgram, "uLightPosition"); // ptr to light position
                 ambientULoc = gl.getUniformLocation(shaderProgram, "uAmbient"); // ptr to ambient
                 diffuseULoc = gl.getUniformLocation(shaderProgram, "uDiffuse"); // ptr to diffuse
                 specularULoc = gl.getUniformLocation(shaderProgram, "uSpecular"); // ptr to specular
@@ -721,12 +716,12 @@ function setupView() {
  */
 function renderModels() {
 
-    var hMatrix = mat4.create(); // handedness matrix
-    var pMatrix = mat4.create(); // projection matrix
-    var vMatrix = mat4.create(); // view matrix
-    var mMatrix = mat4.create(); // model matrix
-    var hpvMatrix = mat4.create(); // hand * proj * view matrices
-    var hpvmMatrix = mat4.create(); // hand * proj * view * model matrices
+    let hMatrix = mat4.create(); // handedness matrix
+    let pMatrix = mat4.create(); // projection matrix
+    let vMatrix = mat4.create(); // view matrix
+    let mMatrix = mat4.create(); // model matrix
+    let hpvMatrix = mat4.create(); // hand * proj * view matrices
+    let hpvmMatrix = mat4.create(); // hand * proj * view * model matrices
 
     window.requestAnimationFrame(renderModels); // set up frame render callback
 
@@ -740,8 +735,8 @@ function renderModels() {
     mat4.multiply(hpvMatrix, hpvMatrix, vMatrix); // handedness * projection * view
 
     // render each triangle set
-    var currSet, setMaterial; // the tri set and its material properties
-    for (var whichTriSet = 0; whichTriSet < numTriangleSets; whichTriSet++) {
+    let currSet, setMaterial; // the tri set and its material properties
+    for (let whichTriSet = 0; whichTriSet < numTriangleSets; whichTriSet++) {
         currSet = inputTriangles[whichTriSet];
 
         mat4.multiply(hpvmMatrix, hpvMatrix, mMatrix); // handedness * project * view * model

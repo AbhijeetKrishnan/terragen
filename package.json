@@ -1,0 +1,14 @@
+{
+  "dependencies": {
+    "gulp-cli": "^2.3.0",
+    "tsc": "^2.0.4"
+  },
+  "devDependencies": {
+    "@types/node": "^18.11.9",
+    "gl-matrix": "^3.4.3",
+    "gulp": "^4.0.0",
+    "gulp-typescript": "^6.0.0-alpha.1",
+    "seedrandom": "^3.0.5",
+    "typescript": "^4.9.3"
+  }
+}
