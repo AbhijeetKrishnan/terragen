@@ -3,18 +3,13 @@
   <head>
     <meta charset="UTF-8">
     <title>terragen</title>
-
-    <script type="text/javascript" src="scripts/gl-matrix.min.js"></script>
-    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/seedrandom/3.0.5/seedrandom.min.js"></script>
-    <script type="text/javascript" src="dist/perlin.js"></script>
-    <script type="text/javascript" src="dist/rasterize.js"></script>
-    <script type="text/javascript" src="dist/interface.js"></script>
+    <script src="./perlin.bundle.js"></script>
   </head>
 
-  <body onload="main();">
+  <body onload="Perlin.main();">
     <canvas id="display" width="512" height="512"></canvas>
     <br/><br/>
-    <button id="redraw" onclick="renderClick();">Render</button><br/><br/>
+    <button id="redraw" onclick="Perlin.renderClick();">Render</button><br/><br/>
     <form>
       <fieldset>
         <legend>Terrain size:</legend>

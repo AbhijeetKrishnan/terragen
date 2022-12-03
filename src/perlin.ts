@@ -3,7 +3,59 @@
  */
 
 const seedrandom = require('seedrandom');
-import { vec2 } from 'gl-matrix';
+import { vec2, vec3 } from 'gl-matrix';
+
+export class PerlinTex {
+    name: string;
+    base: vec3;
+    highlight: vec3;
+    width: number;
+    height: number;
+    share: number | undefined;
+
+    constructor(name: string, base: vec3, highlight: vec3, width: number, height: number, share?: number) {
+        this.name = name;
+        this.base = base;
+        this.highlight = highlight;
+        this.width = width;
+        this.height = height;
+        if (typeof(share) != 'undefined') {
+            this.share = share;
+        }
+    }
+
+    static isPerlinTex(obj: object): obj is PerlinTex {
+        return 'name' in obj
+            && 'base' in obj
+            && 'highlight' in obj
+            && 'width' in obj
+            && 'height' in obj;
+    }
+}
+
+export class PerlinTexPreset {
+    name: string;
+    layers: number;
+    textures: PerlinTex[];
+    objTex: PerlinTex;
+    objCutoff: number;
+
+    constructor(name: string, layers: number, textures: PerlinTex[], objTex: PerlinTex, objCutoff: number) {
+        this.name = name;
+        this.layers = layers;
+        this.textures = textures;
+        this.objTex = objTex;
+        this.objCutoff = objCutoff;
+    }
+
+    static isPerlinTexPreset(obj: object): obj is PerlinTexPreset {
+       return 'name' in obj
+            && 'layers' in obj
+            && 'textures' in obj
+            && 'objTex' in obj
+            && 'objCutoff' in obj;
+    }
+}
 
 export class Perlin {
     IXMAX: number;
