@@ -48,6 +48,7 @@ let Eye = vec3.clone(defaultEye); // eye position in world space
 let Center = vec3.clone(defaultCenter); // view direction in world space
 let Up = vec3.clone(defaultUp); // view up vector in world space
 let viewDelta = 0.1; // how much to displace view with each key press
+// @ts-expect-error
 let rotateTheta = Math.PI / 10; // how much to rotate models by with each key press
 
 /* Terrain generation globals */
@@ -59,7 +60,9 @@ let TERRAIN_MAX_ELEVATION = 32;
 let PERLIN_WIDTH = 16;
 let PERLIN_HEIGHT = 16;
 
+// @ts-expect-error
 let TEX_WIDTH = 256;
+// @ts-expect-error
 let TEX_HEIGHT = 256;
 let TEX_PRESET = 0; // index of texture preset
 
@@ -594,6 +597,7 @@ function setupShaders() {
 /**
  * Setup view parameters
  */
+// @ts-expect-error
 function setupView() {
     let eye_x = TERRAIN_WIDTH / 2;
     let eye_y = 0;
