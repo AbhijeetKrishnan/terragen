@@ -189,7 +189,7 @@ function setupWebGL() {
 function loadModels() {
 
     function loadTexPresets(): boolean {
-        let INPUT_URL = "https://raw.githubusercontent.com/AbhijeetKrishnan/terragen/master/presets.json";
+        const INPUT_URL = "https://raw.githubusercontent.com/AbhijeetKrishnan/terragen/master/presets.json";
         texturePresets = getJSONFile(INPUT_URL, "presets");
 
         // validate
