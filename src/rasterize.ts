@@ -60,11 +60,9 @@ let TERRAIN_MAX_ELEVATION = 16;
 let PERLIN_WIDTH = 16;
 let PERLIN_HEIGHT = 16;
 
-// @ts-expect-error
-let TEX_WIDTH = 256;
-// @ts-expect-error
-let TEX_HEIGHT = 256;
-let TEX_PRESET = 0; // index of texture preset
+let TEX_WIDTH = 16;
+let TEX_HEIGHT = 16;
+let TEX_PRESET = 1; // index of texture preset
 
 let TRI_STEP_SIZE = 1;
 let OBJ_STEP_SIZE = 0.8; // ought to be < 1
@@ -219,32 +217,38 @@ function loadModels() {
     }
 
     /**
-     * generates a texture by interpolating between baseColour and highlightColour based on noise value
+     * Generates a texture by interpolating between baseColour and highlightColour based on noise value
      * @param {Number} perlinWidth width of Perlin grid size
      * @param {Number} perlinHeight height of Perlin grid size
      * @param {Object} texDesc description of texture to be generated
      * @return {HTMLCanvasElement} 
      */
-    function generateTexture(perlinWidth: number, perlinHeight: number, texDesc: PerlinTex): HTMLCanvasElement {
-        let canvas = document.createElement('canvas'); // Ref: https://stackoverflow.com/questions/3892010/create-2d-context-without-canvas
-        canvas.width = texDesc.width;
-        canvas.height = texDesc.height;
-        let ctx = canvas.getContext('2d')!;
-        let w = canvas.width;
-        let h = canvas.height;
-        let baseColour = vec3.fromValues(texDesc.base[0], texDesc.base[1], texDesc.base[2]);
+    function generateTexture(perlinWidth: number, perlinHeight: number, texDesc: PerlinTex): Uint8Array {
+        // let canvas = document.createElement('canvas'); // Ref: https://stackoverflow.com/questions/3892010/create-2d-context-without-canvas
+        // canvas.width = texDesc.width;
+        // canvas.height = texDesc.height;
+        // let ctx = canvas.getContext('2d')!;
+        // let w = canvas.width;
+        // let h = canvas.height;
+        let baseColour = vec3.fromValues(texDesc.base[0], texDesc.base[1], texDesc.base[2]); // TODO: see if spread operator can be used here and below
         let highlightColour = vec3.fromValues(texDesc.highlight[0], texDesc.highlight[1], texDesc.highlight[2]);
-        let perlin = new Perlin(perlinWidth, perlinHeight); // could possible vary this as a ratio of world size
+        let w = texDesc.width;
+        let h = texDesc.height;
+        let tex = new Uint8Array(w * h * 4);
+
+        let perlin = new Perlin(perlinWidth, perlinHeight); // TODO: could possible vary this as a ratio of world size
         for (let i = 0; i < h; i++) {
             for (let j = 0; j < w; j++) {
-                let noise = perlin.getNoise(vec2.fromValues(j + 0.5, i + 0.5), w, h) / 2 + 0.5; // experiment without 0.5
+                let offset = w * h * i + 4 * j;
+                let noise = perlin.getNoise(vec2.fromValues(j + 0.5, i + 0.5), w, h) / 2 + 0.5; // TODO: experiment without 0.5
                 let rgb = vec3.create();
                 vec3.lerp(rgb, baseColour, highlightColour, noise);
-                ctx.fillStyle = "rgb(" + rgb[0] + "," + rgb[1] + "," + rgb[2] + ")";
-                ctx.fillRect(j, i, 1, 1);
+                tex[offset] = rgb[0];
+                tex[offset + 1] = rgb[1];
+                tex[offset + 2] = rgb[2];
             }
         }
-        return canvas;
+        return tex;
     }
 
     /**
@@ -269,11 +273,13 @@ function loadModels() {
                 }
             }
             let tex = generateTexture(PERLIN_WIDTH, PERLIN_HEIGHT, texDesc!);
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, tex);
+            // let tex = new Uint8Array([255, 255, 255]);
+
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, TEX_WIDTH, TEX_HEIGHT, 0, gl.RGBA, gl.UNSIGNED_BYTE, tex);
             gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); // invert vertical texcoord v
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR); // use linear filter for magnification
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR); // use mipmap for minification
-            gl.generateMipmap(gl.TEXTURE_2D); // letruct mipmap pyramid
+            gl.generateMipmap(gl.TEXTURE_2D); // construct mipmap pyramid
             gl.bindTexture(gl.TEXTURE_2D, null); // deactivate model's texture
         }
     } // end load texture

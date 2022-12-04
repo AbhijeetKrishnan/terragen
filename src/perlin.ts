@@ -187,15 +187,15 @@ export class Perlin {
 
         // Determine interpolation weights
         let sx = Perlin.fade(v[0] - x0);
-        console.assert(sx >= 0.0 && sx <= 1.0, {
-            "message": "sx is not in [0, 1]",
-            "sx": sx
-        });
+        // console.assert(sx >= 0.0 && sx <= 1.0, {
+        //     "message": "sx is not in [0, 1]",
+        //     "sx": sx
+        // });
         let sy = Perlin.fade(v[1] - y0);
-        console.assert(sy >= 0.0 && sy <= 1.0, {
-            "message": "sy is not in [0, 1]",
-            "sy": sy
-        });
+        // console.assert(sy >= 0.0 && sy <= 1.0, {
+        //     "message": "sy is not in [0, 1]",
+        //     "sy": sy
+        // });
 
         // Interpolate between grid point gradients
         let n0, n1, ix0, ix1, value;
