@@ -680,6 +680,7 @@ export function renderClick() {
     textures = {};
 
     let config = getParameters();
+    console.log(config);
     loadModels(config);
     renderModels();
 }
