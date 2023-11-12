@@ -226,7 +226,7 @@ function loadModels(config: Config) {
             textures[texName] = gl.createTexture()!; // new texture struct for model
             let currTexture = textures[texName]!; // shorthand
             gl.bindTexture(gl.TEXTURE_2D, currTexture); // activate model's texture
-            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); // invert vertical texcoord v,
+            // gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); // invert vertical texcoord v,
 
             let texDesc = getTexturePreset(config.tex_preset, texName);
             let tex = generateTexture(
@@ -248,7 +248,7 @@ function loadModels(config: Config) {
                 gl.UNSIGNED_BYTE,
                 tex
             );
-            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); // invert vertical texcoord v
+            // gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); // invert vertical texcoord v
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR); // use linear filter for magnification
             gl.texParameteri(
                 gl.TEXTURE_2D,
