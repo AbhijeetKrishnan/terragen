@@ -1,49 +1,87 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="UTF-8">
-    <title>terragen</title>
-  </head>
-
-  <body onload="Perlin.main();">
-    <canvas id="display" width="512" height="512"></canvas>
-    <br/><br/>
-    <button id="redraw" onclick="Perlin.renderClick();">Render</button><br/><br/>
-    <form>
-      <fieldset>
-        <legend>Terrain size:</legend>
-        Terrain width: 
-        <input type="number" id="terrain-width" min="1" value="16"><br/>
-        Terrain height: 
-        <input type="number" id="terrain-height" min="1" value="16"><br/>
-        Terrain depth: 
-        <input type="number" id="terrain-depth" value="0"><br/>
-        Terrain elevation: 
-        <input type="number" id="terrain-elevation" value="16"><br/>
-      </fieldset>
-      <br/>
-      <fieldset>
-        <legend>Perlin grid size:</legend>
-        Perlin grid width: 
-        <input type="number" id="perlin-width" min="1" value="16"><br/>
-        Perlin grid height: 
-        <input type="number" id="perlin-height" min="1" value="16"><br/>
-        </fieldset>
-        <br/>
-        <fieldset>
-          <legend>Texture parameters:</legend>
-          Texture width: 
-          <input type="number" id="tex-width" min="1" value="16"><br/>
-          Texture height: 
-          <input type="number" id="tex-height" min="1" value="16"><br/>
-          Texture preset:
-          <input type="number" id="tex-preset" value="1" min="0" step="1"><br/>
-        </fieldset>
-        <br/>
-        Triangle step size: 
-        <input type="number" id="tri-step-size" value="1" step="0.1"><br/>
-        Object step size: 
-        <input type="number" id="obj-step-size" value="0.8" step="0.1"><br/>
-    </form>
-  </body>
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" href="favicon.ico" type="image/x-icon" />
+        <title>terragen</title>
+    </head>
+    <body onload="Perlin.main();">
+        <canvas id="display" width="512" height="512"></canvas>
+        <br /><br />
+        <button id="redraw" onclick="Perlin.renderClick();">Render</button
+        ><br /><br />
+        <form>
+            <fieldset>
+                <legend>Terrain size:</legend>
+                Terrain width:
+                <input
+                    type="number"
+                    id="terrain-width"
+                    min="1"
+                    value="16"
+                /><br />
+                Terrain height:
+                <input
+                    type="number"
+                    id="terrain-height"
+                    min="1"
+                    value="16"
+                /><br />
+                Terrain depth:
+                <input type="number" id="terrain-depth" value="0" /><br />
+                Terrain elevation:
+                <input type="number" id="terrain-elevation" value="16" /><br />
+            </fieldset>
+            <br />
+            <fieldset>
+                <legend>Perlin grid size:</legend>
+                Perlin grid width:
+                <input
+                    type="number"
+                    id="perlin-width"
+                    min="1"
+                    value="16"
+                /><br />
+                Perlin grid height:
+                <input
+                    type="number"
+                    id="perlin-height"
+                    min="1"
+                    value="16"
+                /><br />
+            </fieldset>
+            <br />
+            <fieldset>
+                <legend>Texture parameters:</legend>
+                Texture width:
+                <input type="number" id="tex-width" min="1" value="16" /><br />
+                Texture height:
+                <input type="number" id="tex-height" min="1" value="16" /><br />
+                Texture preset:
+                <input
+                    type="number"
+                    id="tex-preset"
+                    value="0"
+                    min="0"
+                    max="2"
+                    step="1"
+                /><br />
+            </fieldset>
+            <br />
+            Triangle step size:
+            <input
+                type="number"
+                id="tri-step-size"
+                value="1"
+                step="0.1"
+            /><br />
+            Object step size:
+            <input
+                type="number"
+                id="obj-step-size"
+                value="0.8"
+                step="0.1"
+            /><br />
+        </form>
+    </body>
 </html>

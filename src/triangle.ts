@@ -2,9 +2,9 @@
  * Class to represent a triangle object and material
  */
 
-import { vec2, vec3 } from 'gl-matrix';
-import { PerlinTexPreset } from './perlin';
-import { getNormal } from './util';
+import { vec2, vec3 } from "gl-matrix";
+import { PerlinTexPreset } from "./perlin";
+import { getNormal } from "./util";
 
 export class TriMat {
     ambient: number[];
@@ -20,7 +20,7 @@ export class TriMat {
         this.specular = [0.3, 0.3, 0.3];
         this.n = 15;
         this.alpha = 0.5;
-        this.texture = '';
+        this.texture = "";
     }
 }
 
@@ -49,11 +49,9 @@ export class TriObj {
         this.uvs = [
             [0, 0],
             [0.5, 1],
-            [1, 0]
+            [1, 0],
         ];
-        this.triangles = [
-            [0, 1, 2]
-        ];
+        this.triangles = [[0, 1, 2]];
 
         // set up hilighting, modeling translation and rotation
         this.center = vec3.fromValues(0, 0, 0); // center point of tri set
@@ -63,21 +61,26 @@ export class TriObj {
         this.yAxis = vec3.fromValues(0, 1, 0); // model Y axis
 
         // set up the vertex, normal and uv arrays, define model center and axes
-        this.glVertices = [];  // flat coord list for webgl
-        this.glNormals = [];   // flat normal list for webgl
-        this.glUvs = [];       // flat texture coord list for webgl
+        this.glVertices = []; // flat coord list for webgl
+        this.glNormals = []; // flat normal list for webgl
+        this.glUvs = []; // flat texture coord list for webgl
         this.glTriangles = []; // flat index list for webgl
     }
 
     /**
      * Generate a tree object for placement on the terrain
-     * @param x 
-     * @param y 
-     * @param z 
-     * @param preset 
-     * @returns 
+     * @param x
+     * @param y
+     * @param z
+     * @param preset
+     * @returns
      */
-    static generateObject(x: number, y: number, z: number, tex: PerlinTexPreset): TriObj {
+    static generateObject(
+        x: number,
+        y: number,
+        z: number,
+        tex: PerlinTexPreset
+    ): TriObj {
         /* define model */
         let v1 = vec3.fromValues(x - 0.1, y - 0.1, z);
         let v2 = vec3.fromValues(x - 0.1, y + 0.1, z);
@@ -98,13 +101,13 @@ export class TriObj {
             [0, 1],
             [1, 1],
             [1, 0],
-            [0, 0]
+            [0, 0],
         ];
         tri.triangles = [
             [0, 4, 1],
             [1, 4, 2],
             [2, 4, 3],
-            [3, 4, 0]
+            [3, 4, 0],
         ];
         tri.vertices = [
             [v1[0], v1[1], v1[2]],
@@ -118,7 +121,7 @@ export class TriObj {
             [n2[0], n2[1], n2[2]],
             [n3[0], n3[1], n3[2]],
             [n4[0], n4[1], n4[2]],
-            [0, 0, 1] // no idea why lol
+            [0, 0, 1], // no idea why lol
         ];
         return tri;
     }

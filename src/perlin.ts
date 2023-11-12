@@ -1,9 +1,9 @@
 /**
- * Class to generate 2-D Perlin noise 
+ * Class to generate 2-D Perlin noise
  */
 
-const seedrandom = require('seedrandom');
-import { vec2, vec3 } from 'gl-matrix';
+const seedrandom = require("seedrandom");
+import { vec2, vec3 } from "gl-matrix";
 
 export class PerlinTex {
     name: string;
@@ -13,23 +13,32 @@ export class PerlinTex {
     height: number;
     share: number | undefined;
 
-    constructor(name: string, base: vec3, highlight: vec3, width: number, height: number, share?: number) {
+    constructor(
+        name: string,
+        base: vec3,
+        highlight: vec3,
+        width: number,
+        height: number,
+        share?: number
+    ) {
         this.name = name;
         this.base = base;
         this.highlight = highlight;
         this.width = width;
         this.height = height;
-        if (typeof(share) != 'undefined') {
+        if (typeof share != "undefined") {
             this.share = share;
         }
     }
 
     static isPerlinTex(obj: object): obj is PerlinTex {
-        return 'name' in obj
-            && 'base' in obj
-            && 'highlight' in obj
-            && 'width' in obj
-            && 'height' in obj;
+        return (
+            "name" in obj &&
+            "base" in obj &&
+            "highlight" in obj &&
+            "width" in obj &&
+            "height" in obj
+        );
     }
 }
 
@@ -40,7 +49,13 @@ export class PerlinTexPreset {
     objTex: PerlinTex;
     objCutoff: number;
 
-    constructor(name: string, layers: number, textures: PerlinTex[], objTex: PerlinTex, objCutoff: number) {
+    constructor(
+        name: string,
+        layers: number,
+        textures: PerlinTex[],
+        objTex: PerlinTex,
+        objCutoff: number
+    ) {
         this.name = name;
         this.layers = layers;
         this.textures = textures;
@@ -49,11 +64,13 @@ export class PerlinTexPreset {
     }
 
     static isPerlinTexPreset(obj: object): obj is PerlinTexPreset {
-       return 'name' in obj
-            && 'layers' in obj
-            && 'textures' in obj
-            && 'objTex' in obj
-            && 'objCutoff' in obj;
+        return (
+            "name" in obj &&
+            "layers" in obj &&
+            "textures" in obj &&
+            "objTex" in obj &&
+            "objCutoff" in obj
+        );
     }
 }
 
@@ -66,7 +83,7 @@ export class Perlin {
     /**
      * Creates Perlin object with grid size (ixmax x iymax)
      * Coordinates in Perlin grid-space are in [0, ixmax - 1] and [0, iymax - 1]
-     * @param {Number} ixmax 
+     * @param {Number} ixmax
      * @param {Number} iymax
      */
     constructor(ixmax: number, iymax: number) {
@@ -88,7 +105,7 @@ export class Perlin {
 
     /**
      * Sets seed for Perlin noise generation and computes corresponding gradient
-     * @param {String} seed 
+     * @param {String} seed
      */
     setSeed(seed: string) {
         this.rng = seedrandom(seed);
@@ -103,7 +120,10 @@ export class Perlin {
             let row: vec2[] = this.Gradient[y]!;
             for (let x = 0; x < this.IXMAX; x++) {
                 // transform to [-1, 1]
-                row[x] = vec2.fromValues(2 * this.rng() - 1, 2 * this.rng() - 1);
+                row[x] = vec2.fromValues(
+                    2 * this.rng() - 1,
+                    2 * this.rng() - 1
+                );
 
                 // Normalize the vector
                 vec2.normalize(row[x]!, row[x]!);
@@ -114,8 +134,8 @@ export class Perlin {
     /**
      * Function to linearly interpolate between a0 and a1
      * Weight w should be in the range [0.0, 1.0]
-     * @param {Number} a0 
-     * @param {Number} a1 
+     * @param {Number} a0
+     * @param {Number} a1
      * @param {Number} w
      * @return {Number}
      */
@@ -127,8 +147,8 @@ export class Perlin {
      * Fade function as defined by Ken Perlin.  This eases coordinate values
      * so that they will "ease" towards integral values.  This ends up smoothing
      * the final output.
-     * Reference: Ken Perlin. 2002. Improving noise. In Proceedings of the 29th annual conference on 
-     *      Computer graphics and interactive techniques (SIGGRAPH '02). ACM, New York, NY, USA, 681-682. 
+     * Reference: Ken Perlin. 2002. Improving noise. In Proceedings of the 29th annual conference on
+     *      Computer graphics and interactive techniques (SIGGRAPH '02). ACM, New York, NY, USA, 681-682.
      *      DOI: https://doi.org/10.1145/566570.566636
      * @param {Number} t
      * @return {Number}
@@ -161,7 +181,6 @@ export class Perlin {
      * @return {Number} - in range [-1, 1]
      */
     getNoise(vect: vec2, width: number, height: number): number {
-
         // Transform world coordinates to Perlin grid coordinates
         let oldRatio = vec2.fromValues(width, height);
         let newRatio = vec2.fromValues(this.IXMAX - 1, this.IYMAX - 1);
@@ -171,11 +190,13 @@ export class Perlin {
 
         // Determine grid cell coordinates
         let x0 = Math.floor(v[0]);
-        if (x0 + 1 == this.IXMAX) // in case of point on right edge
+        if (x0 + 1 == this.IXMAX)
+            // in case of point on right edge
             x0 -= 1;
         let x1 = x0 + 1;
         let y0 = Math.floor(v[1]);
-        if (y0 + 1 == this.IYMAX) // in case of point on bottom edge
+        if (y0 + 1 == this.IYMAX)
+            // in case of point on bottom edge
             y0 -= 1;
         let y1 = y0 + 1;
 
