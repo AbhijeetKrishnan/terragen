@@ -1,28 +1,20 @@
 # terragen
 
-A procedural terrain generator that uses Perlin noise.
+![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
+![Webpack](https://img.shields.io/badge/webpack-%238DD6F9.svg?style=for-the-badge&logo=webpack&logoColor=black)
 
 ![A procedurally generated terrain](/assets/terragen.png)
 
+A procedural terrain generator that uses Perlin noise.
+
 ## Build Instructions
 
-0. Ensure your system has `node` installed with the `npm` command available on `PATH`.
+Requires `node` to be installed on your system.
 
-1. Clone the repository
+```bash
+git clone git@github.com:AbhijeetKrishnan/terragen.git
+cd terragen
 
-    ```bash
-    git clone git@github.com:AbhijeetKrishnan/terragen.git
-    cd terragen
-    ```
-
-2. Install `node` dependencies
-
-    ```bash
-    node install
-    ```
-
-3. Build the distribution files using `webpack`
-
-    ```bash
-    npm run build
-    ```
+npm ci --omit=dev
+npm run build
+```
