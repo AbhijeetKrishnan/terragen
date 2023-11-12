@@ -58,8 +58,7 @@ let Eye = vec3.clone(defaultEye); // eye position in world space
 let Center = vec3.clone(defaultCenter); // view direction in world space
 let Up = vec3.clone(defaultUp); // view up vector in world space
 let viewDelta = 0.1; // how much to displace view with each key press
-// @ts-expect-error
-let rotateTheta = (Math.PI / 180) * 0.1; // how much to rotate models by with each key press
+let rotateTheta = Math.PI / 360; // how much to rotate models by with each key press
 
 // ASSIGNMENT HELPER FUNCTIONS
 
@@ -69,110 +68,116 @@ let rotateTheta = (Math.PI / 180) * 0.1; // how much to rotate models by with ea
  */
 function handleKeyDown(event: KeyboardEvent) {
     // set up needed view params
-    let lookAt = vec3.create(),
-        viewRight = vec3.create(),
-        temp = vec3.create(); // lookat, right & temp vectors
-    lookAt = vec3.normalize(lookAt, vec3.subtract(temp, Center, Eye)); // get lookat vector
+    let lookAt = vec3.create();
+    let viewRight = vec3.create();
+    let temp = vec3.create(); // lookat, right & temp vectors
+    lookAt = vec3.normalize(lookAt, vec3.sub(temp, Center, Eye)); // get lookat vector
     viewRight = vec3.normalize(viewRight, vec3.cross(temp, lookAt, Up)); // get view right vector
 
     switch (event.code) {
         // view change
         case "KeyA": // translate view left, rotate left with shift
-            Center = vec3.add(
-                Center,
-                Center,
-                vec3.scale(temp, viewRight, viewDelta)
-            );
-            if (!event.getModifierState("Shift"))
+            if (!event.getModifierState("Shift")) {
                 Eye = vec3.add(
                     Eye,
                     Eye,
                     vec3.scale(temp, viewRight, viewDelta)
                 );
+                Center = vec3.add(
+                    Center,
+                    Center,
+                    vec3.scale(temp, viewRight, viewDelta)
+                );
+            } else {
+                let transform = mat4.create();
+                mat4.fromRotation(transform, -rotateTheta, Up);
+                vec3.transformMat4(temp, lookAt, transform);
+                Center = vec3.add(Center, Eye, temp);
+                setupCamera();
+            }
             break;
         case "KeyD": // translate view right, rotate right with shift
-            Center = vec3.add(
-                Center,
-                Center,
-                vec3.scale(temp, viewRight, -viewDelta)
-            );
-            if (!event.getModifierState("Shift"))
+            if (!event.getModifierState("Shift")) {
                 Eye = vec3.add(
                     Eye,
                     Eye,
                     vec3.scale(temp, viewRight, -viewDelta)
                 );
-            break;
-        case "KeyS": // translate view backward, rotate up with shift
-            if (event.getModifierState("Shift")) {
                 Center = vec3.add(
                     Center,
                     Center,
-                    vec3.scale(temp, Up, viewDelta)
+                    vec3.scale(temp, viewRight, -viewDelta)
                 );
-                Up = vec3.cross(
-                    Up,
-                    viewRight,
-                    vec3.subtract(lookAt, Center, Eye)
-                ); /* global side effect */
             } else {
+                let transform = mat4.create();
+                mat4.fromRotation(transform, rotateTheta, Up);
+                vec3.transformMat4(temp, lookAt, transform);
+                Center = vec3.add(Center, Eye, temp);
+                setupCamera();
+            }
+            break;
+        case "KeyS": // translate view backward, rotate up with shift
+            if (!event.getModifierState("Shift")) {
                 Eye = vec3.add(Eye, Eye, vec3.scale(temp, lookAt, -viewDelta));
                 Center = vec3.add(
                     Center,
                     Center,
                     vec3.scale(temp, lookAt, -viewDelta)
                 );
+            } else {
+                let transform = mat4.create();
+                mat4.fromRotation(transform, -rotateTheta, viewRight);
+                vec3.transformMat4(temp, lookAt, transform);
+                Center = vec3.add(Center, Eye, temp);
+                setupCamera();
             } // end if shift not pressed
             break;
         case "KeyW": // translate view forward, rotate down with shift
-            if (event.getModifierState("Shift")) {
-                Center = vec3.add(
-                    Center,
-                    Center,
-                    vec3.scale(temp, Up, -viewDelta)
-                );
-                Up = vec3.cross(
-                    Up,
-                    viewRight,
-                    vec3.subtract(lookAt, Center, Eye)
-                ); /* global side effect */
-            } else {
+            if (!event.getModifierState("Shift")) {
                 Eye = vec3.add(Eye, Eye, vec3.scale(temp, lookAt, viewDelta));
                 Center = vec3.add(
                     Center,
                     Center,
                     vec3.scale(temp, lookAt, viewDelta)
                 );
+            } else {
+                let transform = mat4.create();
+                mat4.fromRotation(transform, rotateTheta, viewRight);
+                vec3.transformMat4(temp, lookAt, transform);
+                Center = vec3.add(Center, Eye, temp);
+                setupCamera();
             } // end if shift not pressed
             break;
         case "KeyQ": // translate view up, rotate counterclockwise with shift
-            if (event.getModifierState("Shift"))
-                Up = vec3.normalize(
-                    Up,
-                    vec3.add(Up, Up, vec3.scale(temp, viewRight, -viewDelta))
-                );
-            else {
+            if (!event.getModifierState("Shift")) {
                 Eye = vec3.add(Eye, Eye, vec3.scale(temp, Up, viewDelta));
                 Center = vec3.add(
                     Center,
                     Center,
-                    vec3.scale(temp, Up, viewDelta)
+                    vec3.scale(temp, vec3.normalize(temp, Up), viewDelta)
                 );
+            } else {
+                let transform = mat4.create();
+                mat4.fromRotation(transform, rotateTheta, lookAt);
+                vec3.transformMat4(Up, Up, transform);
             } // end if shift not pressed
             break;
         case "KeyE": // translate view down, rotate clockwise with shift
-            if (event.getModifierState("Shift"))
-                Up = vec3.normalize(
-                    Up,
-                    vec3.add(Up, Up, vec3.scale(temp, viewRight, viewDelta))
+            if (!event.getModifierState("Shift")) {
+                Eye = vec3.add(
+                    Eye,
+                    Eye,
+                    vec3.scale(temp, vec3.normalize(temp, Up), -viewDelta)
                 );
-            else {
-                Eye = vec3.add(Eye, Eye, vec3.scale(temp, Up, -viewDelta));
                 Center = vec3.add(
                     Center,
                     Center,
                     vec3.scale(temp, Up, -viewDelta)
                 );
+            } else {
+                let transform = mat4.create();
+                mat4.fromRotation(transform, -rotateTheta, lookAt);
+                vec3.transformMat4(Up, Up, transform);
             } // end if shift not pressed
             break;
         case "Escape": // reset view to default
@@ -368,12 +373,12 @@ function setupShaders() {
             
             // vertex position
             vec4 vWorldPos4 = umMatrix * vec4(aVertexPosition, 1.0);
-            vWorldPos = vec3(vWorldPos4.x,vWorldPos4.y,vWorldPos4.z);
+            vWorldPos = vec3(vWorldPos4.xyz);
             gl_Position = upvmMatrix * vec4(aVertexPosition, 1.0);
 
             // vertex normal (assume no non-uniform scale)
             vec4 vWorldNormal4 = umMatrix * vec4(aVertexNormal, 0.0);
-            vVertexNormal = normalize(vec3(vWorldNormal4.x,vWorldNormal4.y,vWorldNormal4.z)); 
+            vVertexNormal = normalize(vec3(vWorldNormal4.xyz));
             
             // vertex uv
             vVertexUV = aVertexUV;
@@ -554,18 +559,27 @@ function setupShaders() {
 /**
  * Setup view parameters
  */
-function setupView(config: Config) {
-    let eye_x = config.terrain_width / 2;
-    let eye_y = 0;
-    let eye_z =
-        1.5 * config.terrain_max_elevation - 0.5 * config.terrain_min_depth;
-    Eye = vec3.fromValues(eye_x, eye_y, eye_z);
-    Center = vec3.fromValues(eye_x, config.terrain_height, 0);
+
+function setupCamera() {
     vec3.sub(Up, Center, Eye);
-    vec3.cross(Up, Up, vec3.fromValues(-1, 0, 0)); // TODO: not sure why -1
+    vec3.cross(Up, vec3.fromValues(1, 0, 0), Up);
+}
+
+function initView(config: Config) {
+    Eye = vec3.fromValues(
+        config.terrain_width / 2,
+        0,
+        config.terrain_max_elevation / 2
+    );
+    Center = vec3.fromValues(
+        config.terrain_width / 2,
+        config.terrain_height,
+        0
+    );
+    setupCamera();
     viewDelta = (config.terrain_max_elevation - config.terrain_min_depth) / 100;
-    rotateTheta = Math.PI / 10;
-    lightPosition = vec3.fromValues(config.terrain_width / 2, 0, 30);
+    rotateTheta = Math.PI / 360;
+    lightPosition = vec3.fromValues(config.terrain_width / 2, 0, 10);
 }
 
 /**
@@ -692,6 +706,6 @@ export function main() {
     let config = new Config();
     loadModels(config); // load in the models from tri file
     setupShaders(); // setup the webGL shaders
-    setupView(config); // setup camera
+    initView(config); // setup camera
     renderModels(); // draw the triangles using webGL
 } // end main
