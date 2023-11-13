@@ -1,7 +1,7 @@
 import { vec2, vec3, ReadonlyVec2 } from "gl-matrix";
 import { PerlinTex, PerlinTexPreset, Perlin } from "./perlin";
-import { Config, transformRange, getNormal } from "./util";
-import { TriMat, TriObj } from "./triangle";
+import { Config, transformRange } from "./util";
+import { TriObj } from "./triangle";
 import presetsFile from "./static/presets.json";
 
 let texturePresets: PerlinTexPreset[] = loadTexPresets();
@@ -40,26 +40,38 @@ function loadTexPresets(): PerlinTexPreset[] {
     return texturePresets;
 }
 
-export function getTexturePreset(
+export function getTexturePreset(texPreset: number): PerlinTexPreset {
+    return texturePresets[texPreset]!;
+}
+
+export function getTextureFromPresets(
     texPreset: number,
     texName: string
-): PerlinTex {
-    let texDesc: PerlinTex;
-    if (texturePresets[texPreset]!.objTex.name == texName) {
-        texDesc = texturePresets[texPreset]!.objTex;
-    } else {
-        for (
-            let tex = 0;
-            tex < texturePresets[texPreset]!.textures.length;
-            tex++
-        ) {
-            if (texturePresets[texPreset]!.textures[tex]!.name == texName) {
-                texDesc = texturePresets[texPreset]!.textures[tex]!;
-                break;
-            }
+): PerlinTex | null {
+    for (const tex of texturePresets[texPreset]!.textures) {
+        if (tex.name == texName) {
+            return tex;
         }
     }
-    return texDesc!;
+    return null;
+}
+
+function getTexByHeight(
+    texPreset: PerlinTexPreset,
+    height: number,
+    minDepth: number,
+    maxElevation: number
+): PerlinTex {
+    for (let tex = 0; tex < texPreset.layers; tex++) {
+        let lim =
+            minDepth +
+            texPreset.textures[tex]!.share! * (maxElevation - minDepth);
+        if (height < lim) {
+            return texPreset.textures[tex]!;
+        }
+    }
+    // no matching preset found, using last layer
+    return texPreset.textures[-1]!;
 }
 
 /**
@@ -98,6 +110,27 @@ export function generateTexture(
     return tex;
 }
 
+function getHeightFactor(
+    p: ReadonlyVec2,
+    terrainWidth: number,
+    terrainHeight: number
+) {
+    let retVal = (p[0] + p[1]) / (terrainWidth + terrainHeight);
+    return Math.pow(retVal, 2);
+}
+
+function generateGridTri(
+    points: [vec2, vec2, vec2],
+    heights: number[],
+    tex: PerlinTex
+): TriObj {
+    let v = points.map((p, index) =>
+        vec3.fromValues(p[0], p[1], heights[index]!)
+    ) as [vec3, vec3, vec3];
+    let tri = TriObj.getSingleTri(v[0], v[1], v[2], tex);
+    return tri;
+}
+
 /**
  * Generate triangles for terrain of size w x h
  * @param {Number} w
@@ -108,70 +141,13 @@ export function generateTexture(
 export function generateTerrain(
     w: number,
     h: number,
-    preset: number,
+    preset: PerlinTexPreset,
     config: Config
 ): TriObj[] {
     let terrainTris = [];
 
     let noise = new Perlin(config.perlin_width, config.perlin_height);
     // let objNoise = new Perlin(config.perlin_width, config.perlin_height);
-
-    function generateTri(p1: vec2, p2: vec2, p3: vec2, preset: number): TriObj {
-        function getHeightFactor(p: ReadonlyVec2) {
-            let retVal =
-                (p[0] + p[1]) / (config.terrain_width + config.terrain_height);
-            retVal = retVal * retVal;
-            return retVal;
-        }
-        let v1 = vec3.fromValues(
-            p1[0],
-            p1[1],
-            transformRange(
-                noise.getNoise(p1, w, h),
-                config.terrain_min_depth,
-                config.terrain_max_elevation
-            ) * getHeightFactor(p1)
-        );
-        let v2 = vec3.fromValues(
-            p2[0],
-            p2[1],
-            transformRange(
-                noise.getNoise(p2, w, h),
-                config.terrain_min_depth,
-                config.terrain_max_elevation
-            ) * getHeightFactor(p2)
-        );
-        let v3 = vec3.fromValues(
-            p3[0],
-            p3[1],
-            transformRange(
-                noise.getNoise(p3, w, h),
-                config.terrain_min_depth,
-                config.terrain_max_elevation
-            ) * getHeightFactor(p3)
-        );
-        let n = getNormal(v1, v2, v3);
-
-        let currTriMat = new TriMat();
-        let tri = new TriObj(currTriMat);
-
-        let ht = (v1[2] + v2[2] + v3[2]) / 3;
-        for (let tex = 0; tex < texturePresets[preset]!.layers; tex++) {
-            let lim =
-                config.terrain_min_depth +
-                texturePresets[preset]!.textures[tex]!.share! *
-                    (config.terrain_max_elevation - config.terrain_min_depth);
-            if (ht < lim) {
-                tri.material.texture =
-                    texturePresets[preset]!.textures[tex]!.name;
-                break;
-            }
-        }
-
-        tri.vertices = [v1, v2, v3];
-        tri.normals = [n, n, n];
-        return tri;
-    }
 
     for (let i = 0; i < h; i += config.tri_step_size) {
         for (let j = 0; j < w; j += config.tri_step_size) {
@@ -184,13 +160,49 @@ export function generateTerrain(
                 i + config.tri_step_size
             );
 
+            function createTriObj(points: [vec2, vec2, vec2]): TriObj {
+                let noises: number[] = points.map((p) =>
+                    transformRange(
+                        noise.getNoise(p, w, h),
+                        config.terrain_min_depth,
+                        config.terrain_max_elevation
+                    )
+                );
+                let heightFactors = points.map((p) =>
+                    getHeightFactor(
+                        p,
+                        config.terrain_width,
+                        config.terrain_height
+                    )
+                );
+                let heights = heightFactors.map(
+                    (h, index) => h * noises[index]!
+                );
+                let avgH =
+                    heights.reduce((sum, value) => sum + value, 0) /
+                    heights.length;
+                let tex = getTexByHeight(
+                    preset,
+                    avgH,
+                    config.terrain_min_depth,
+                    config.terrain_max_elevation
+                );
+                return generateGridTri(points, heights, tex);
+            }
+
             // generating top-left triangle
-            let tlTri = generateTri(tr, tl, bl, preset);
-            terrainTris.push(tlTri);
+            {
+                let points: [vec2, vec2, vec2] = [tr, tl, bl];
+                let tlTri = createTriObj(points);
+                terrainTris.push(tlTri);
+            }
 
             // generating bottom-right triangle
-            let brTri = generateTri(bl, br, tr, preset);
-            terrainTris.push(brTri);
+            {
+                let points: [vec2, vec2, vec2] = [bl, br, tr];
+                let brTri = createTriObj(points);
+                terrainTris.push(brTri);
+            }
 
             // generating objects
             // for (let k = i; k < i + config.tri_step_size; k += OBJ_STEP_SIZE) {

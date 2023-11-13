@@ -1,7 +1,12 @@
 import { vec2, vec3, mat4 } from "gl-matrix";
-import { TriObj } from "./triangle";
+import { TriMat, TriObj } from "./triangle";
 import { Config } from "./util";
-import { generateTexture, getTexturePreset, generateTerrain } from "./generate";
+import {
+    generateTexture,
+    generateTerrain,
+    getTexturePreset,
+    getTextureFromPresets,
+} from "./generate";
 
 /* GLOBAL CONSTANTS AND VARIABLES */
 
@@ -78,16 +83,8 @@ function handleKeyDown(event: KeyboardEvent) {
         // view change
         case "KeyA": // translate view left, rotate left with shift
             if (!event.getModifierState("Shift")) {
-                Eye = vec3.add(
-                    Eye,
-                    Eye,
-                    vec3.scale(temp, viewRight, viewDelta)
-                );
-                Center = vec3.add(
-                    Center,
-                    Center,
-                    vec3.scale(temp, viewRight, viewDelta)
-                );
+                Eye = vec3.scaleAndAdd(Eye, Eye, viewRight, viewDelta);
+                Center = vec3.scaleAndAdd(Center, Center, viewRight, viewDelta);
             } else {
                 let transform = mat4.create();
                 mat4.fromRotation(transform, -rotateTheta, Up);
@@ -98,15 +95,12 @@ function handleKeyDown(event: KeyboardEvent) {
             break;
         case "KeyD": // translate view right, rotate right with shift
             if (!event.getModifierState("Shift")) {
-                Eye = vec3.add(
-                    Eye,
-                    Eye,
-                    vec3.scale(temp, viewRight, -viewDelta)
-                );
-                Center = vec3.add(
+                Eye = vec3.scaleAndAdd(Eye, Eye, viewRight, -viewDelta);
+                Center = vec3.scaleAndAdd(
                     Center,
                     Center,
-                    vec3.scale(temp, viewRight, -viewDelta)
+                    viewRight,
+                    -viewDelta
                 );
             } else {
                 let transform = mat4.create();
@@ -118,12 +112,8 @@ function handleKeyDown(event: KeyboardEvent) {
             break;
         case "KeyS": // translate view backward, rotate up with shift
             if (!event.getModifierState("Shift")) {
-                Eye = vec3.add(Eye, Eye, vec3.scale(temp, lookAt, -viewDelta));
-                Center = vec3.add(
-                    Center,
-                    Center,
-                    vec3.scale(temp, lookAt, -viewDelta)
-                );
+                Eye = vec3.scaleAndAdd(Eye, Eye, lookAt, -viewDelta);
+                Center = vec3.scaleAndAdd(Center, Center, lookAt, -viewDelta);
             } else {
                 let transform = mat4.create();
                 mat4.fromRotation(transform, -rotateTheta, viewRight);
@@ -134,12 +124,8 @@ function handleKeyDown(event: KeyboardEvent) {
             break;
         case "KeyW": // translate view forward, rotate down with shift
             if (!event.getModifierState("Shift")) {
-                Eye = vec3.add(Eye, Eye, vec3.scale(temp, lookAt, viewDelta));
-                Center = vec3.add(
-                    Center,
-                    Center,
-                    vec3.scale(temp, lookAt, viewDelta)
-                );
+                Eye = vec3.scaleAndAdd(Eye, Eye, lookAt, viewDelta);
+                Center = vec3.scaleAndAdd(Center, Center, lookAt, viewDelta);
             } else {
                 let transform = mat4.create();
                 mat4.fromRotation(transform, rotateTheta, viewRight);
@@ -150,12 +136,8 @@ function handleKeyDown(event: KeyboardEvent) {
             break;
         case "KeyQ": // translate view up, rotate counterclockwise with shift
             if (!event.getModifierState("Shift")) {
-                Eye = vec3.add(Eye, Eye, vec3.scale(temp, Up, viewDelta));
-                Center = vec3.add(
-                    Center,
-                    Center,
-                    vec3.scale(temp, vec3.normalize(temp, Up), viewDelta)
-                );
+                Eye = vec3.scaleAndAdd(Eye, Eye, Up, viewDelta);
+                Center = vec3.scaleAndAdd(Center, Center, Up, viewDelta);
             } else {
                 let transform = mat4.create();
                 mat4.fromRotation(transform, rotateTheta, lookAt);
@@ -164,16 +146,8 @@ function handleKeyDown(event: KeyboardEvent) {
             break;
         case "KeyE": // translate view down, rotate clockwise with shift
             if (!event.getModifierState("Shift")) {
-                Eye = vec3.add(
-                    Eye,
-                    Eye,
-                    vec3.scale(temp, vec3.normalize(temp, Up), -viewDelta)
-                );
-                Center = vec3.add(
-                    Center,
-                    Center,
-                    vec3.scale(temp, Up, -viewDelta)
-                );
+                Eye = vec3.scaleAndAdd(Eye, Eye, Up, -viewDelta);
+                Center = vec3.scaleAndAdd(Center, Center, Up, -viewDelta);
             } else {
                 let transform = mat4.create();
                 mat4.fromRotation(transform, -rotateTheta, lookAt);
@@ -228,13 +202,13 @@ function loadModels(config: Config) {
             gl.bindTexture(gl.TEXTURE_2D, currTexture); // activate model's texture
             // gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); // invert vertical texcoord v,
 
-            let texDesc = getTexturePreset(config.tex_preset, texName);
+            let texDesc = getTextureFromPresets(config.tex_preset, texName);
             let tex = generateTexture(
                 config.perlin_width,
                 config.perlin_height,
                 config.tex_width,
                 config.tex_height,
-                texDesc
+                texDesc!
             );
 
             gl.texImage2D(
@@ -263,7 +237,7 @@ function loadModels(config: Config) {
     inputTriangles = generateTerrain(
         config.terrain_width,
         config.terrain_height,
-        config.tex_preset,
+        getTexturePreset(config.tex_preset),
         config
     ); // read in the triangle data
 
@@ -328,7 +302,7 @@ function loadModels(config: Config) {
             new Float32Array(currSet.glUvs),
             gl.STATIC_DRAW
         ); // data in
-        loadTexture(currSet.material.texture); // load tri set's texture
+        loadTexture(currSet.material.name); // load tri set's texture
 
         // set up the triangle index array, adjusting indices across sets
         triSetSizes[whichSet] = currSet.triangles.length; // number of tris in this set
@@ -613,14 +587,14 @@ function renderModels() {
         gl.uniformMatrix4fv(mMatrixULoc, false, mMatrix); // pass in the m matrix
         gl.uniformMatrix4fv(pvmMatrixULoc, false, hpvmMatrix); // pass in the hpvm matrix
 
-        setMaterial = currSet.material; // normal material
+        setMaterial = new TriMat(); // normal material
         gl.uniform3fv(ambientULoc, setMaterial.ambient); // pass in the ambient reflectivity
         gl.uniform3fv(diffuseULoc, setMaterial.diffuse); // pass in the diffuse reflectivity
         gl.uniform3fv(specularULoc, setMaterial.specular); // pass in the specular reflectivity
         gl.uniform1f(shininessULoc, setMaterial.n); // pass in the specular exponent
-        gl.uniform1i(usingTextureULoc, Number(currSet.material.texture != "")); // whether the set uses texture
+        gl.uniform1i(usingTextureULoc, Number(currSet.material != null)); // whether the set uses texture
         gl.activeTexture(gl.TEXTURE0); // bind to active texture 0 (the first)
-        gl.bindTexture(gl.TEXTURE_2D, textures[currSet.material.texture]!); // bind the set's texture
+        gl.bindTexture(gl.TEXTURE_2D, textures[currSet.material.name]!); // bind the set's texture
         gl.uniform1i(textureULoc, 0); // pass in the texture and active texture 0
 
         // position, normal and uv buffers: activate and feed into vertex shader
