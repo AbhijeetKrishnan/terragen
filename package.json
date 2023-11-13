@@ -1,6 +1,5 @@
 {
   "dependencies": {
-    "purecss": "^3.0.0",
     "tsc": "^2.0.4"
   },
   "devDependencies": {

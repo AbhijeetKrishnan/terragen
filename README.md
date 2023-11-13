@@ -17,6 +17,6 @@ Requires `node` to be installed on your system.
 git clone git@github.com:AbhijeetKrishnan/terragen.git
 cd terragen
 
-npm ci --omit=dev
+npm install --omit=dev
 npm run build
 ```
