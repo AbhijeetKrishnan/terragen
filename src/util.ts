@@ -7,7 +7,7 @@ import { vec3, ReadonlyVec3 } from "gl-matrix";
  * @param v3
  * @returns
  */
-export function getNormal(
+export function getNormal( // assume vertices in anticlockwise order
     v1: ReadonlyVec3,
     v2: ReadonlyVec3,
     v3: ReadonlyVec3
@@ -18,6 +18,7 @@ export function getNormal(
     vec3.subtract(v3_v1, v3, v1);
     let n = vec3.create();
     vec3.cross(n, v2_v1, v3_v1);
+    // vec3.negate(n, n);
     vec3.normalize(n, n);
     return n;
 }

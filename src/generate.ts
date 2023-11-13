@@ -97,11 +97,15 @@ export function generateTexture(
     let perlin = new Perlin(perlinWidth, perlinHeight); // TODO: could possible vary this as a ratio of world size
     for (let i = 0; i < h; i++) {
         for (let j = 0; j < w; j++) {
-            let offset = w * h * i + 4 * j;
-            let noise =
-                perlin.getNoise(vec2.fromValues(j + 0.5, i + 0.5), w, h) / 2;
+            let offset = 4 * (i * w + j);
+            let noise = perlin.getNoise(vec2.fromValues(j, i), w, h);
             let rgb = vec3.create();
-            vec3.lerp(rgb, baseColour, highlightColour, noise);
+            vec3.lerp(
+                rgb,
+                baseColour,
+                highlightColour,
+                transformRange(noise, 0, 1, -1, 1)
+            );
             tex[offset] = rgb[0];
             tex[offset + 1] = rgb[1];
             tex[offset + 2] = rgb[2];
@@ -138,7 +142,7 @@ function generateGridTri(
  * @param {Number} preset - index of texture preset to use
  * @return {Array} - list of triangles
  */
-export function generateTerrain(
+export function generateTerrain( // TODO: optimize model storage to unify vertices, normals, uvs and triangles arrays
     w: number,
     h: number,
     preset: PerlinTexPreset,
@@ -192,14 +196,14 @@ export function generateTerrain(
 
             // generating top-left triangle
             {
-                let points: [vec2, vec2, vec2] = [tr, tl, bl];
+                let points: [vec2, vec2, vec2] = [tl, bl, tr]; // anticlockwise order
                 let tlTri = createTriObj(points);
                 terrainTris.push(tlTri);
             }
 
             // generating bottom-right triangle
             {
-                let points: [vec2, vec2, vec2] = [bl, br, tr];
+                let points: [vec2, vec2, vec2] = [tr, bl, br];
                 let brTri = createTriObj(points);
                 terrainTris.push(brTri);
             }

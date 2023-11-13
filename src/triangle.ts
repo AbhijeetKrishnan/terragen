@@ -70,13 +70,14 @@ export class TriObj {
     }
 
     static getSingleTri(v1: vec3, v2: vec3, v3: vec3, tex: PerlinTex): TriObj {
-        let vertices = [v1, v2, v3];
+        let vertices = [v1, v2, v3]; // assume vertices in anticlockwise order
         let n = getNormal(v1, v2, v3);
         let normals = [n, n, n];
         let uvs: [number, number][] = [
+            // TODO: how is this obtained?
             [0, 0],
-            [0.5, 1],
             [1, 0],
+            [0.5, 1],
         ];
         let triangles: [number, number, number][] = [[0, 1, 2]];
         return new TriObj(vertices, normals, uvs, triangles, tex);

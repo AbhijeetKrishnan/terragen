@@ -28,6 +28,7 @@
             <div class="grid">
                 <div>
                     <form id="config">
+                        <!-- TODO: have label that displays value above range slider (or convert back into number)-->
                         <fieldset>
                             <legend><b>Terrain Size</b></legend>
 
@@ -37,7 +38,7 @@
                                 id="terrain-width"
                                 name="terrain-width"
                                 min="1"
-                                max="25"
+                                max="128"
                                 value="16"
                             />
 
@@ -47,7 +48,7 @@
                                 id="terrain-height"
                                 name="terrain-height"
                                 min="1"
-                                max="25"
+                                max="128"
                                 value="16"
                             />
 
@@ -57,8 +58,8 @@
                                 id="terrain-depth"
                                 name="terrain-depth"
                                 value="0"
-                                min="-5"
-                                max="5"
+                                min="-64"
+                                max="64"
                             />
                             <label for="terrain-elevation">Elevation</label>
                             <input
@@ -67,7 +68,7 @@
                                 name="terrain-elevation"
                                 value="16"
                                 min="1"
-                                max="25"
+                                max="128"
                             />
                         </fieldset>
 
@@ -79,7 +80,7 @@
                                 id="perlin-width"
                                 name="perlin-width"
                                 min="1"
-                                max="25"
+                                max="128"
                                 value="16"
                             />
                             <label for="perlin-height">Height</label>
@@ -88,7 +89,7 @@
                                 id="perlin-height"
                                 name="perlin-height"
                                 min="1"
-                                max="25"
+                                max="128"
                                 value="16"
                             />
                         </fieldset>
@@ -101,7 +102,7 @@
                                 id="tex-width"
                                 name="tex-width"
                                 min="1"
-                                max="25"
+                                max="128"
                                 value="16"
                             />
                             <label for="tex-height">Height</label>
@@ -110,7 +111,7 @@
                                 id="tex-height"
                                 name="tex-height"
                                 min="1"
-                                max="25"
+                                max="128"
                                 value="16"
                             />
                             <label for="tex-preset">Preset</label>

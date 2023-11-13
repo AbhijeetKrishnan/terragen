@@ -396,13 +396,13 @@ function setupShaders() {
             vec3 normal = normalize(vVertexNormal); 
             vec3 light = normalize(uLightPosition - vWorldPos);
             float lambert = max(0.0,dot(normal,light));
-            vec3 diffuse = uDiffuse*uLightDiffuse*lambert; // diffuse term
+            vec3 diffuse = uDiffuse * uLightDiffuse * lambert; // diffuse term
             
             // specular term
             vec3 eye = normalize(uEyePosition - vWorldPos);
-            vec3 halfVec = normalize(light+eye);
-            float highlight = pow(max(0.0,dot(normal,halfVec)),uShininess);
-            vec3 specular = uSpecular*uLightSpecular*highlight; // specular term
+            vec3 halfVec = normalize(light + eye);
+            float highlight = pow(max(0.0, dot(normal, halfVec)), uShininess);
+            vec3 specular = uSpecular * uLightSpecular * highlight; // specular term
             
             // combine to find lit color
             vec3 litColor = ambient + diffuse + specular; 
@@ -553,7 +553,7 @@ function initView(config: Config) {
     setupCamera();
     viewDelta = (config.terrain_max_elevation - config.terrain_min_depth) / 100;
     rotateTheta = Math.PI / 360;
-    lightPosition = vec3.fromValues(config.terrain_width / 2, 0, 10);
+    lightPosition = vec3.fromValues(config.terrain_width / 2, 0, 5);
 }
 
 /**

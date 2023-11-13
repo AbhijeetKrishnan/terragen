@@ -182,6 +182,7 @@ export class Perlin {
      */
     getNoise(vect: vec2, width: number, height: number): number {
         // Transform world coordinates to Perlin grid coordinates
+        // TODO: debug why this only creates elevation in the top left corner
         let oldRatio = vec2.fromValues(width, height);
         let newRatio = vec2.fromValues(this.IXMAX - 1, this.IYMAX - 1);
         let v = vec2.clone(vect);
